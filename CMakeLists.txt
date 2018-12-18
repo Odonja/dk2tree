@@ -7,5 +7,5 @@ set(CMAKE_CXX_STANDARD 14)
 include_directories(~/include)
 link_directories(~/lib)
 
-add_executable(untitled main.cpp)
+add_executable(untitled main.cpp TTree.cpp TTree.h)
 target_link_libraries(untitled LINK_PUBLIC sdsl divsufsort divsufsort64)
