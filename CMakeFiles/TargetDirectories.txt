@@ -1,3 +1,0 @@
-/home/hugo/CLionProjects/dk2tree/CMakeFiles/rebuild_cache.dir
-/home/hugo/CLionProjects/dk2tree/CMakeFiles/untitled.dir
-/home/hugo/CLionProjects/dk2tree/CMakeFiles/edit_cache.dir
