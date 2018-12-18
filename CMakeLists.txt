@@ -3,6 +3,7 @@ project(untitled)
 
 set(CMAKE_CXX_STANDARD 14)
 
+# Add include and lib direc
 include_directories(~/include)
 link_directories(~/lib)
 
