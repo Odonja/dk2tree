@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/untitled.dir/main.cpp.o  -o untitled  -L/home/hugo/lib -Wl,-rpath,/home/hugo/lib -lsdsl -ldivsufsort -ldivsufsort64 
