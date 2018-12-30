@@ -19,6 +19,18 @@ static const unsigned int e = 3;
 static const unsigned int childCount = 2;
 
 struct TTree {
+    /// Record type containing the number pf preceding bits and ones, and the
+    /// index of a child node in the parent's `entries` list
+    struct Record {
+        unsigned long b;
+        unsigned long o;
+        unsigned long i;
+
+        Record(unsigned long b, unsigned long o, unsigned long i):
+            b(b), o(o), i(i) {}
+    };
+
+
     /** TTreeNode is the struct representing a single node (leaf or internal) of the TTree */
     struct TTreeNode;
 
@@ -41,6 +53,10 @@ struct TTree {
             {}
 
             ~Entry() {
+            }
+
+            void remove() {
+                std::cout << "Weg ermee" << std::endl;
                 delete P;
             }
         };
@@ -50,6 +66,12 @@ struct TTree {
         InternalNode():
             entries{Entry(), Entry()}
         {}
+
+        ~InternalNode() {
+            for (auto &entry : entries) {
+                entry.remove();
+            }
+        }
     };
 
     /** A leaf node, which consists of a sdsl-bitvector and a rank support structure on that bitvector */
@@ -80,9 +102,11 @@ struct TTree {
             ~Node() { }
         } node;
 
+        Record findChild(unsigned long);
         InternalNode::Entry findLeaf(unsigned long);
         unsigned long rank1(unsigned long);
         bool access(unsigned long);
+        bool setBit(unsigned long, bool);
 
         TTreeNode():
             isLeaf(true),
