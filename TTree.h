@@ -52,11 +52,13 @@ struct TTree {
                     b(b), o(o), P(P)
             {}
 
-            ~Entry() {
-            }
-
+            /**
+             * This function is called in the destructor of `InternalNode`, to
+             * delete the child nodes. It is not part of the destructor of `Entry`,
+             * since that causes problems when the struct is used in methods such as
+             * `findLeaf`
+             */
             void remove() {
-                std::cout << "Weg ermee" << std::endl;
                 delete P;
             }
         };
