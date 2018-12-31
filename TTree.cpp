@@ -2,6 +2,7 @@
 // Created by anneke on 18/12/18.
 //
 
+#include <iostream>
 #include "TTree.h"
 
 // Constructors and destructors for data types that can't be in TTree.h
@@ -208,6 +209,40 @@ void TTree::deleteBits(long unsigned index, long unsigned count) {
     leaf->updateCounters(-count, -deletedOnes);
 }
 
+/**
+ * Returns the depth of this node, which is the length of the path from this
+ * node to the root
+ * @return the depth of `this`
+ */
+unsigned long TTree::depth() {
+    if (parent == nullptr) {
+        return 0;
+    } else {
+        return 1 + parent->depth();
+    }
+}
+
+/**
+ * Returns the height of this node, which is the length of the longest path from
+ * this node to any leaf in its subtree.
+ * @return the height of `this`
+ */
+unsigned long TTree::height() {
+    if (isLeaf) {
+        return 0;
+    } else {
+        auto &entries = node.internalNode->entries;
+        unsigned long max = 0;
+        for (auto &entry : entries) {
+            unsigned long depth = entry.P->height();
+            if (depth > max) {
+                max = depth;
+            }
+        }
+        return max + 1;
+    }
+}
+
 /// Methods for determining the number of bits and ones in a leaf or internal node
 unsigned long TTree::bits() {
     if (isLeaf) {
@@ -247,5 +282,5 @@ unsigned long LeafNode::bits() {
 
 unsigned long LeafNode::ones() {
     // Count all ones manually
-    return countOnes(this->bv, 0, B);
+    return countOnes(this->bv, 0, bv.size());
 }

@@ -61,8 +61,6 @@ void largerAccessSetTest() {
     auto *i3 = new TTree(l4, l5);
     auto *i2 = new TTree(i4, l3);
     auto *root = new TTree(i2, i3);
-    printf("  Total bits: %lu\n", root->bits());
-
     // 100 randomly generated bits to flip with no consecutive entries
     unsigned long toFlip[]{
            5,   36,   60,   68,   98,  114,  116,  157,  226,  291,
@@ -80,6 +78,7 @@ void largerAccessSetTest() {
         root->setBit(i, true);
     }
 
+    printf("  Total bits: %lu\n", root->bits());
     printf("  Total ones: ");
     printOnes(root);
     printf("\n");

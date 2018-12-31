@@ -77,7 +77,7 @@ struct InternalNode {
     unsigned long ones();
 };
 
-/** A leaf node, which consists of a sdsl-bitvector and a rank support structure on that bitvector */
+/** A leaf node, which consists of a bitvector (represented by vector<bool>) */
 struct LeafNode {
     bit_vector bv;
 
@@ -89,7 +89,7 @@ struct LeafNode {
     unsigned long ones();
 };
 
-/** TTreeNode is the struct representing a single node (leaf or internal) of the TTree */
+/** TTree is the struct representing a single node (leaf or internal) of the TTree */
 /** A single node is either an internal or leaf node, as indicated by the isLeaf value */
 struct TTree {
     bool isLeaf;
@@ -119,9 +119,11 @@ struct TTree {
         right->indexInParent = 1;
     }
 
-    /// The TTreeNode destructor decides which variant of the union to destroy
+    /// The TTree destructor decides which variant of the union to destroy
     ~TTree();
 
+    unsigned long depth();
+    unsigned long height();
     Record findChild(unsigned long);
     InternalNode::Entry findLeaf(unsigned long);
     unsigned long rank1(unsigned long);
@@ -130,6 +132,7 @@ struct TTree {
     unsigned long bits();
     unsigned long ones();
     void updateCounters(long, long);
+    void split();
     void insertBits(long unsigned, long unsigned);
     void deleteBits(long unsigned, long unsigned);
 };
