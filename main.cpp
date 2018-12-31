@@ -1,6 +1,7 @@
 #include "TTree.h"
-#include <stdio.h>
-#include <assert.h>
+#include <cstdio>
+#include <cassert>
+#include <iostream>
 
 void printSome(TTree &node, unsigned long lo, unsigned long hi) {
     printf("  bits [%lu...%lu] = [%i", lo, hi, node.access(lo));
@@ -98,7 +99,31 @@ void largerAccessSetTest() {
     }
 }
 
+/**
+ * Creates the tree from `largerAccessSetTest` a million times and destroys it
+ * immediately. Ubuntu's resource monitor indicates that the memory usage is
+ * constant (instead of rising steadily), indicating that there is no memory leak.
+ */
+void memTest() {
+    for (int i = 1; i <= 1000000; i++) {
+        if (i % 1000 == 0) {
+            std::cout << i << std::endl;
+        }
+        auto *l1 = new TTree;
+        auto *l2 = new TTree;
+        auto *l3 = new TTree;
+        auto *l4 = new TTree;
+        auto *l5 = new TTree;
+        auto *i4 = new TTree(l1, l2);
+        auto *i3 = new TTree(l4, l5);
+        auto *i2 = new TTree(i4, l3);
+        auto *root = new TTree(i2, i3);
+        delete root;
+    }
+}
+
 int main() {
     accessSetTest();
     largerAccessSetTest();
+    memTest();
 }

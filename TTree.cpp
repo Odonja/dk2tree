@@ -19,9 +19,9 @@ TTree::Node::Node(TTree *P1, TTree *P2) {
 
 TTree::~TTree() {
     if (isLeaf) {
-        node.leafNode->~LeafNode();
+        delete node.leafNode;
     } else {
-        node.internalNode->~InternalNode();
+        delete node.internalNode;
     }
 }
 
