@@ -25,11 +25,11 @@ TTree::~TTree() {
     }
 }
 
-InternalNode::Entry::Entry(TTree *P) {
-    b = P->bits();
-    o = P->ones();
-    this->P = P;
-}
+InternalNode::Entry::Entry(TTree *P):
+    b(P->bits()),
+    o(P->ones()),
+    P(P)
+{}
 
 void InternalNode::Entry::remove() {
     delete P;

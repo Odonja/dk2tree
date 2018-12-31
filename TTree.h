@@ -93,8 +93,8 @@ struct LeafNode {
 /** A single node is either an internal or leaf node, as indicated by the isLeaf value */
 struct TTree {
     bool isLeaf;
-    TTree *parent;
-    unsigned long indexInParent;
+    TTree *parent = nullptr;
+    unsigned long indexInParent = 0;
 
     union Node {
         InternalNode *internalNode;
@@ -106,8 +106,6 @@ struct TTree {
 
     TTree():
             isLeaf(true),
-            parent(nullptr),
-            indexInParent(0),
             node()
     {}
 
