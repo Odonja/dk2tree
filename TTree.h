@@ -5,10 +5,9 @@
 #ifndef UNTITLED_TTREE_H
 #define UNTITLED_TTREE_H
 
-#include <sdsl/bit_vectors.hpp>
-#include <sdsl/rank_support_v.hpp>
+#include <vector>
 
-using namespace sdsl;
+typedef std::vector<bool> bit_vector;
 
 // The three main parameters for the TTree and LTree representation
 // Values taken from section 6.2.1.
@@ -48,6 +47,12 @@ struct TTree {
                     b(0), o(0), P(nullptr)
             {}
 
+            explicit Entry(TTreeNode *P) {
+                b = P->bits();
+                o = P->ones();
+                this->P = P;
+            }
+
             Entry(unsigned long b, unsigned long o, TTreeNode *P):
                     b(b), o(o), P(P)
             {}
@@ -63,7 +68,7 @@ struct TTree {
             }
         };
 
-        Entry entries[2];
+        Entry entries[childCount];
 
         InternalNode():
             entries{Entry(), Entry()}
@@ -74,17 +79,21 @@ struct TTree {
                 entry.remove();
             }
         }
+
+        unsigned long bits();
+        unsigned long ones();
     };
 
     /** A leaf node, which consists of a sdsl-bitvector and a rank support structure on that bitvector */
     struct LeafNode {
         bit_vector bv;
-        rank_support_v<> rs;
 
         explicit LeafNode(unsigned long size):
-            bv(size, 0),
-            rs(&bv)
+            bv(size, false)
         {}
+
+        unsigned long bits();
+        unsigned long ones();
     };
 
     /** A single node is either an internal or leaf node, as indicated by the isLeaf value */
@@ -92,37 +101,50 @@ struct TTree {
         bool isLeaf;
 
         union Node {
-            InternalNode internalNode;
-            LeafNode leafNode;
+            InternalNode *internalNode;
+            LeafNode *leafNode;
 
             Node() {
-                new(&leafNode) LeafNode(B);
+                this->leafNode = new LeafNode(B);
             }
 
-            /// The constructor does nothing, because deletion of the members
+            Node(TTreeNode *P1, TTreeNode *P2) {
+                this->internalNode = new InternalNode();
+                internalNode->entries[0] = InternalNode::Entry(P1);
+                internalNode->entries[1] = InternalNode::Entry(P2);
+            }
+
+            /// The destructor does nothing, because deletion of the members
             /// has to be handled by `TTreeNode`, which knows which variant it is
             ~Node() { }
         } node;
-
-        Record findChild(unsigned long);
-        InternalNode::Entry findLeaf(unsigned long);
-        unsigned long rank1(unsigned long);
-        bool access(unsigned long);
-        bool setBit(unsigned long, bool);
 
         TTreeNode():
             isLeaf(true),
             node()
         {}
 
+        TTreeNode(TTreeNode *left, TTreeNode *right):
+            isLeaf(false),
+            node(left, right)
+        {}
+
         /// The TTreeNode destructor decides which variant of the union to destroy
         ~TTreeNode() {
             if (isLeaf) {
-                node.leafNode.~LeafNode();
+                node.leafNode->~LeafNode();
             } else {
-                node.internalNode.~InternalNode();
+                node.internalNode->~InternalNode();
             }
         }
+
+        Record findChild(unsigned long);
+        InternalNode::Entry findLeaf(unsigned long);
+        unsigned long rank1(unsigned long);
+        bool access(unsigned long);
+        bool setBit(unsigned long, bool);
+        unsigned long bits();
+        unsigned long ones();
     };
 
     TTreeNode root;

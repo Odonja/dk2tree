@@ -3,6 +3,26 @@
 //
 
 #include "TTree.h"
+#include <sdsl/util.hpp>
+
+/**
+ * Counts the number of one-bits in the specified range in the bit vector
+ * TODO try optimising by counting per byte
+ *
+ * @param bv a vector<bool>
+ * @param lo an integer with 0 <= lo <= bv.size()
+ * @param hi an integer with lo <= hi <= bv.size()
+ * @return the number of one-bits in the bits bv[lo] .. bv[hi - 1]
+ */
+unsigned long countOnes(const bit_vector &bv, unsigned long lo, unsigned long hi) {
+    unsigned long tot = 0;
+    for (unsigned long i = lo; i < hi; i++) {
+        if (bv[i]) {
+            tot ++;
+        }
+    }
+    return tot;
+}
 
 /**
  * Given an integer n, returns the child node containing the n-th bit in this subtree,
@@ -20,14 +40,15 @@ TTree::Record TTree::TTreeNode::findChild(unsigned long n) {
         unsigned long bitsBefore = 0;
         unsigned long onesBefore = 0;
 
-        InternalNode node = this->node.internalNode;
+        InternalNode *node = this->node.internalNode;
         unsigned long i = 0;
-        for (const auto &entry : node.entries) {
-            if (bitsBefore + entry.b >= n) {
+        for (const auto &entry : node->entries) {
+            if (bitsBefore + entry.b > n) {
                 return {bitsBefore, onesBefore, i};
             }
             bitsBefore += entry.b;
             onesBefore += entry.o;
+            i += 1;
         }
     }
     // If we reach this point, that means that the size of this subtree is less than n
@@ -55,7 +76,7 @@ TTree::InternalNode::Entry TTree::TTreeNode::findLeaf(unsigned long n) {
         auto record = current->findChild(n - bitsBefore);
         bitsBefore += record.b;
         onesBefore += record.o;
-        current = current->node.internalNode.entries[record.i].P;
+        current = current->node.internalNode->entries[record.i].P;
     }
     return {bitsBefore, onesBefore, current};
 }
@@ -67,7 +88,8 @@ TTree::InternalNode::Entry TTree::TTreeNode::findLeaf(unsigned long n) {
  */
 unsigned long TTree::TTreeNode::rank1(unsigned long n) {
     auto entry = findLeaf(n);
-    return entry.o + entry.P -> node.leafNode.rs.rank(n - entry.b);
+    auto &bv = entry.P->node.leafNode->bv;
+    return entry.o + countOnes(bv, 0, n - entry.b);
 }
 
 /**
@@ -77,7 +99,7 @@ unsigned long TTree::TTreeNode::rank1(unsigned long n) {
  */
 bool TTree::TTreeNode::access(unsigned long n) {
     auto entry = findLeaf(n);
-    return entry.P -> node.leafNode.bv[n - entry.b];
+    return entry.P -> node.leafNode->bv[n - entry.b];
 }
 
 /**
@@ -89,13 +111,13 @@ bool TTree::TTreeNode::access(unsigned long n) {
  */
 bool TTree::TTreeNode::setBit(unsigned long n, bool b) {
     if (this->isLeaf) {
-        auto &bv = this->node.leafNode.bv;
+        auto &bv = this->node.leafNode->bv;
         bool prev = bv[n];
         bv[n] = b;
         return prev ^ b;
     } else {
         auto record = this->findChild(n);
-        auto *entry = &this->node.internalNode.entries[record.i];
+        auto *entry = &this->node.internalNode->entries[record.i];
         bool result = entry->P->setBit(n - record.b, b);
         if (result) {
             if (b) {
@@ -106,4 +128,46 @@ bool TTree::TTreeNode::setBit(unsigned long n, bool b) {
         }
         return result;
     }
+}
+
+/// Methods for determining the number of bits and ones in a leaf or internal node
+unsigned long TTree::TTreeNode::bits() {
+    if (isLeaf) {
+        return node.leafNode->bits();
+    } else {
+        return node.internalNode->bits();
+    }
+}
+
+unsigned long TTree::TTreeNode::ones() {
+    if (isLeaf) {
+        return node.leafNode->ones();
+    } else {
+        return node.internalNode->ones();
+    }
+}
+
+unsigned long TTree::InternalNode::bits() {
+    unsigned long total = 0;
+    for (const auto &entry : entries) {
+        total += entry.b;
+    }
+    return total;
+}
+
+unsigned long TTree::InternalNode::ones() {
+    unsigned long total = 0;
+    for (const auto &entry : entries) {
+        total += entry.o;
+    }
+    return total;
+}
+
+unsigned long TTree::LeafNode::bits() {
+    return bv.size();
+}
+
+unsigned long TTree::LeafNode::ones() {
+    // Count all ones manually
+    return countOnes(this->bv, 0, B);
 }
