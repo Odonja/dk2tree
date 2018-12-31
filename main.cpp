@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-void printSome(TTree::TTreeNode &node, unsigned long lo, unsigned long hi) {
+void printSome(TTree &node, unsigned long lo, unsigned long hi) {
     printf("  bits [%lu...%lu] = [%i", lo, hi, node.access(lo));
     for (unsigned long i = lo + 1; i < hi; i++) {
         printf(", %i", node.access(i));
@@ -12,7 +12,7 @@ void printSome(TTree::TTreeNode &node, unsigned long lo, unsigned long hi) {
 
 void accessSetTest() {
     printf("Testing access+setbit+rank1 on leaf\n");
-    TTree::TTreeNode node;
+    TTree node;
 
     printSome(node, 10, 20);
     node.setBit(13, true);
@@ -31,7 +31,7 @@ void accessSetTest() {
     printf("  rank(%lu): %lu\n", n, node.rank1(n));
 }
 
-unsigned long printOnes(TTree::TTreeNode *tree) {
+unsigned long printOnes(TTree *tree) {
     if (tree -> isLeaf) {
         unsigned long n = tree->rank1(512);
         printf("%lu", n);
@@ -51,15 +51,15 @@ unsigned long printOnes(TTree::TTreeNode *tree) {
 void largerAccessSetTest() {
     printf("Testing access+setbit+rank1 on larger tree\n");
     // Create example tree with 5 leaves (=2560 bits)
-    auto *l1 = new TTree::TTreeNode;
-    auto *l2 = new TTree::TTreeNode;
-    auto *l3 = new TTree::TTreeNode;
-    auto *l4 = new TTree::TTreeNode;
-    auto *l5 = new TTree::TTreeNode;
-    auto *i4 = new TTree::TTreeNode(l1, l2);
-    auto *i3 = new TTree::TTreeNode(l4, l5);
-    auto *i2 = new TTree::TTreeNode(i4, l3);
-    auto *root = new TTree::TTreeNode(i2, i3);
+    auto *l1 = new TTree;
+    auto *l2 = new TTree;
+    auto *l3 = new TTree;
+    auto *l4 = new TTree;
+    auto *l5 = new TTree;
+    auto *i4 = new TTree(l1, l2);
+    auto *i3 = new TTree(l4, l5);
+    auto *i2 = new TTree(i4, l3);
+    auto *root = new TTree(i2, i3);
     printf("  Total bits: %lu\n", root->bits());
 
     // 100 randomly generated bits to flip with no consecutive entries

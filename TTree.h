@@ -17,137 +17,125 @@ static const unsigned int e = 3;
 
 static const unsigned int childCount = 2;
 
-struct TTree {
-    /// Record type containing the number pf preceding bits and ones, and the
-    /// index of a child node in the parent's `entries` list
-    struct Record {
+/// Record type containing the number pf preceding bits and ones, and the
+/// index of a child node in the parent's `entries` list
+struct Record {
+    unsigned long b;
+    unsigned long o;
+    unsigned long i;
+
+    Record(unsigned long b, unsigned long o, unsigned long i):
+        b(b), o(o), i(i) {}
+};
+
+struct InternalNode;
+struct LeafNode;
+struct TTree;
+
+/**
+ * A struct for the internal nodes of the tree
+ * This contains a list of Entries of the form <b, o, P>
+ */
+struct InternalNode {
+    struct Entry {
         unsigned long b;
         unsigned long o;
-        unsigned long i;
+        TTree *P;
 
-        Record(unsigned long b, unsigned long o, unsigned long i):
-            b(b), o(o), i(i) {}
+        Entry():
+                b(0), o(0), P(nullptr)
+        {}
+
+        explicit Entry(TTree *P);
+
+        Entry(unsigned long b, unsigned long o, TTree *P):
+                b(b), o(o), P(P)
+        {}
+
+        /**
+         * This function is called in the destructor of `InternalNode`, to
+         * delete the child nodes. It is not part of the destructor of `Entry`,
+         * since that causes problems when the struct is used in methods such as
+         * `findLeaf`
+         */
+        void remove();
     };
 
+    Entry entries[childCount];
 
-    /** TTreeNode is the struct representing a single node (leaf or internal) of the TTree */
-    struct TTreeNode;
-
-    /**
-     * A struct for the internal nodes of the tree
-     * This contains a list of Entries of the form <b, o, P>
-     */
-    struct InternalNode {
-        struct Entry {
-            unsigned long b;
-            unsigned long o;
-            TTreeNode *P;
-
-            Entry():
-                    b(0), o(0), P(nullptr)
-            {}
-
-            explicit Entry(TTreeNode *P) {
-                b = P->bits();
-                o = P->ones();
-                this->P = P;
-            }
-
-            Entry(unsigned long b, unsigned long o, TTreeNode *P):
-                    b(b), o(o), P(P)
-            {}
-
-            /**
-             * This function is called in the destructor of `InternalNode`, to
-             * delete the child nodes. It is not part of the destructor of `Entry`,
-             * since that causes problems when the struct is used in methods such as
-             * `findLeaf`
-             */
-            void remove() {
-                delete P;
-            }
-        };
-
-        Entry entries[childCount];
-
-        InternalNode():
+    InternalNode():
             entries{Entry(), Entry()}
-        {}
+    {}
 
-        ~InternalNode() {
-            for (auto &entry : entries) {
-                entry.remove();
-            }
+    ~InternalNode() {
+        for (auto &entry : entries) {
+            entry.remove();
         }
+    }
 
-        unsigned long bits();
-        unsigned long ones();
-    };
+    unsigned long bits();
+    unsigned long ones();
+};
 
-    /** A leaf node, which consists of a sdsl-bitvector and a rank support structure on that bitvector */
-    struct LeafNode {
-        bit_vector bv;
+/** A leaf node, which consists of a sdsl-bitvector and a rank support structure on that bitvector */
+struct LeafNode {
+    bit_vector bv;
 
-        explicit LeafNode(unsigned long size):
+    explicit LeafNode(unsigned long size):
             bv(size, false)
-        {}
+    {}
 
-        unsigned long bits();
-        unsigned long ones();
-    };
+    unsigned long bits();
+    unsigned long ones();
+};
 
-    /** A single node is either an internal or leaf node, as indicated by the isLeaf value */
-    struct TTreeNode {
-        bool isLeaf;
+/** TTreeNode is the struct representing a single node (leaf or internal) of the TTree */
+/** A single node is either an internal or leaf node, as indicated by the isLeaf value */
+struct TTree {
+    bool isLeaf;
+    TTree *parent;
+    unsigned long indexInParent;
 
-        union Node {
-            InternalNode *internalNode;
-            LeafNode *leafNode;
+    union Node {
+        InternalNode *internalNode;
+        LeafNode *leafNode;
 
-            Node() {
-                this->leafNode = new LeafNode(B);
-            }
+        Node();
+        Node(TTree*, TTree*);
 
-            Node(TTreeNode *P1, TTreeNode *P2) {
-                this->internalNode = new InternalNode();
-                internalNode->entries[0] = InternalNode::Entry(P1);
-                internalNode->entries[1] = InternalNode::Entry(P2);
-            }
+        /// The destructor does nothing, because deletion of the members
+        /// has to be handled by `TTreeNode`, which knows which variant it is
+        ~Node() { }
+    } node;
 
-            /// The destructor does nothing, because deletion of the members
-            /// has to be handled by `TTreeNode`, which knows which variant it is
-            ~Node() { }
-        } node;
-
-        TTreeNode():
+    TTree():
             isLeaf(true),
+            parent(nullptr),
+            indexInParent(0),
             node()
-        {}
+    {}
 
-        TTreeNode(TTreeNode *left, TTreeNode *right):
+    TTree(TTree *left, TTree *right):
             isLeaf(false),
             node(left, right)
-        {}
+    {
+        left->parent = this;
+        left->indexInParent = 0;
+        right->parent = this;
+        right->indexInParent = 1;
+    }
 
-        /// The TTreeNode destructor decides which variant of the union to destroy
-        ~TTreeNode() {
-            if (isLeaf) {
-                node.leafNode->~LeafNode();
-            } else {
-                node.internalNode->~InternalNode();
-            }
-        }
+    /// The TTreeNode destructor decides which variant of the union to destroy
+    ~TTree();
 
-        Record findChild(unsigned long);
-        InternalNode::Entry findLeaf(unsigned long);
-        unsigned long rank1(unsigned long);
-        bool access(unsigned long);
-        bool setBit(unsigned long, bool);
-        unsigned long bits();
-        unsigned long ones();
-    };
-
-    TTreeNode root;
+    Record findChild(unsigned long);
+    InternalNode::Entry findLeaf(unsigned long);
+    unsigned long rank1(unsigned long);
+    bool access(unsigned long);
+    bool setBit(unsigned long, bool);
+    unsigned long bits();
+    unsigned long ones();
+    void updateCounters(long, long);
 };
 
 #endif //UNTITLED_TTREE_H

@@ -5,6 +5,36 @@
 #include "TTree.h"
 #include <sdsl/util.hpp>
 
+TTree::Node::Node() {
+    this->internalNode = nullptr;
+    this->leafNode = new LeafNode(B);
+}
+
+TTree::Node::Node(TTree *P1, TTree *P2) {
+    this->leafNode = nullptr;
+    this->internalNode = new InternalNode();
+    internalNode->entries[0] = InternalNode::Entry(P1);
+    internalNode->entries[1] = InternalNode::Entry(P2);
+}
+
+TTree::~TTree() {
+    if (isLeaf) {
+        node.leafNode->~LeafNode();
+    } else {
+        node.internalNode->~InternalNode();
+    }
+}
+
+InternalNode::Entry::Entry(TTree *P) {
+    b = P->bits();
+    o = P->ones();
+    this->P = P;
+}
+
+void InternalNode::Entry::remove() {
+    delete P;
+}
+
 /**
  * Counts the number of one-bits in the specified range in the bit vector
  * TODO try optimising by counting per byte
@@ -33,7 +63,7 @@ unsigned long countOnes(const bit_vector &bv, unsigned long lo, unsigned long hi
  *      o = number of ones preceding this node in the TTree
  *      i = the index of the relevant subtree in the `entries` of `this`
  */
-TTree::Record TTree::TTreeNode::findChild(unsigned long n) {
+Record TTree::findChild(unsigned long n) {
     if (this->isLeaf) {
         return {0, 0, 0};
     } else {
@@ -68,7 +98,7 @@ TTree::Record TTree::TTreeNode::findChild(unsigned long n) {
  * Note that P is strictly just a pointer to a `TTreeNode`, as defined by the `entry` struct
  * But the union is always of the `LeafNode` variant.
  */
-TTree::InternalNode::Entry TTree::TTreeNode::findLeaf(unsigned long n) {
+InternalNode::Entry TTree::findLeaf(unsigned long n) {
     auto *current = this;
     unsigned long bitsBefore = 0;
     unsigned long onesBefore = 0;
@@ -86,7 +116,7 @@ TTree::InternalNode::Entry TTree::TTreeNode::findLeaf(unsigned long n) {
  * @param n  an integer with 0 <= n < (numbers of bits in the tree)
  * @return the number of 1-bits in the tree up to position n
  */
-unsigned long TTree::TTreeNode::rank1(unsigned long n) {
+unsigned long TTree::rank1(unsigned long n) {
     auto entry = findLeaf(n);
     auto &bv = entry.P->node.leafNode->bv;
     return entry.o + countOnes(bv, 0, n - entry.b);
@@ -97,7 +127,7 @@ unsigned long TTree::TTreeNode::rank1(unsigned long n) {
  * @param n the index of a bit in the `TTree`
  * @return the value of the `n`-th bit in the tree
  */
-bool TTree::TTreeNode::access(unsigned long n) {
+bool TTree::access(unsigned long n) {
     auto entry = findLeaf(n);
     return entry.P -> node.leafNode->bv[n - entry.b];
 }
@@ -109,29 +139,45 @@ bool TTree::TTreeNode::access(unsigned long n) {
  * @return true if this bit changed, e.g.
  *      if the previous value of the bit was unequal to b
  */
-bool TTree::TTreeNode::setBit(unsigned long n, bool b) {
-    if (this->isLeaf) {
-        auto &bv = this->node.leafNode->bv;
-        bool prev = bv[n];
-        bv[n] = b;
-        return prev ^ b;
-    } else {
-        auto record = this->findChild(n);
-        auto *entry = &this->node.internalNode->entries[record.i];
-        bool result = entry->P->setBit(n - record.b, b);
-        if (result) {
-            if (b) {
-                entry->o += 1;
-            } else {
-                entry->o -= 1;
-            }
-        }
-        return result;
+bool TTree::setBit(unsigned long n, bool b) {
+    // Find the leaf node that contains this bit
+    auto entry = findLeaf(n);
+    bit_vector &bv = entry.P->node.leafNode->bv;
+    bool changed = bv[n - entry.b] ^ b;
+    bv[n - entry.b] = b;
+
+    if (changed) {
+        // Change the one-counters all the way up from this leaf
+        entry.P->updateCounters(0, b ? 1ul : -1ul);
+    }
+    return changed;
+}
+
+/**
+ * Changes the values of the counters `b` and `o` of all the nodes whose
+ * subtree contains this node. Used to update these counters after modifying
+ * the underlying bitvector, or the structure of the tree.
+ *
+ * @param dBits the change in the number of bits (e.g. 4 when 4 bits were inserted)
+ * @param dOnes the change in the number of ones (e.g. 2 when 2 zeros were set to ones)
+ */
+void TTree::updateCounters(long dBits, long dOnes) {
+    TTree *current = this;
+    // Go up in the tree until we reach the root
+    while (current->parent != nullptr) {
+        // Take the entry in `current`s parent that points to `current`,
+        // and update its `b` and `o` counters.
+        auto parent = current->parent;
+        auto &entry = parent->node.internalNode->entries[current->indexInParent];
+        entry.b += dBits;
+        entry.o += dOnes;
+
+        current = parent;
     }
 }
 
 /// Methods for determining the number of bits and ones in a leaf or internal node
-unsigned long TTree::TTreeNode::bits() {
+unsigned long TTree::bits() {
     if (isLeaf) {
         return node.leafNode->bits();
     } else {
@@ -139,7 +185,7 @@ unsigned long TTree::TTreeNode::bits() {
     }
 }
 
-unsigned long TTree::TTreeNode::ones() {
+unsigned long TTree::ones() {
     if (isLeaf) {
         return node.leafNode->ones();
     } else {
@@ -147,7 +193,7 @@ unsigned long TTree::TTreeNode::ones() {
     }
 }
 
-unsigned long TTree::InternalNode::bits() {
+unsigned long InternalNode::bits() {
     unsigned long total = 0;
     for (const auto &entry : entries) {
         total += entry.b;
@@ -155,7 +201,7 @@ unsigned long TTree::InternalNode::bits() {
     return total;
 }
 
-unsigned long TTree::InternalNode::ones() {
+unsigned long InternalNode::ones() {
     unsigned long total = 0;
     for (const auto &entry : entries) {
         total += entry.o;
@@ -163,11 +209,11 @@ unsigned long TTree::InternalNode::ones() {
     return total;
 }
 
-unsigned long TTree::LeafNode::bits() {
+unsigned long LeafNode::bits() {
     return bv.size();
 }
 
-unsigned long TTree::LeafNode::ones() {
+unsigned long LeafNode::ones() {
     // Count all ones manually
     return countOnes(this->bv, 0, B);
 }
