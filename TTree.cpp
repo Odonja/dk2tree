@@ -3,8 +3,8 @@
 //
 
 #include "TTree.h"
-#include <sdsl/util.hpp>
 
+// Constructors and destructors for data types that can't be in TTree.h
 TTree::Node::Node() {
     this->internalNode = nullptr;
     this->leafNode = new LeafNode(B);
@@ -84,7 +84,6 @@ Record TTree::findChild(unsigned long n) {
     // If we reach this point, that means that the size of this subtree is less than n
     // so the input parameter was out of range
     // TODO throw exception or something
-    std::cout << "Oh nee!" << std::endl;
 }
 
 /**
@@ -174,6 +173,39 @@ void TTree::updateCounters(long dBits, long dOnes) {
 
         current = parent;
     }
+}
+
+/**
+ * Inserts the given number of bits (set to zero) at the given position in the tree
+ *
+ * @param index the position at which to insert bits
+ * @param count the number of bits to insert
+ */
+void TTree::insertBits(long unsigned index, long unsigned count) {
+    auto entry = findLeaf(index);
+    auto leaf = entry.P;
+    auto &bv = leaf->node.leafNode->bv;
+    bv.insert(bv.begin() + (index - entry.b), count, false);
+    leaf->updateCounters(count, 0);
+}
+
+/**
+ * Deletes the given number of bits in the subtree, assuming they are all in the
+ * same leaf node. This will be the case if a group of k^2 bits are deleted
+ *
+ * @param index the position of the first bit to delete
+ * @param count the number of bits to delete
+ */
+void TTree::deleteBits(long unsigned index, long unsigned count) {
+    auto entry = findLeaf(index);
+    auto leaf = entry.P;
+    auto &bv = leaf->node.leafNode->bv;
+    long unsigned start = index - entry.b;
+    long unsigned end = start + count;
+    long unsigned deletedOnes = countOnes(bv, start, end);
+    auto begin = bv.begin();
+    bv.erase(begin + start, begin + end);
+    leaf->updateCounters(-count, -deletedOnes);
 }
 
 /// Methods for determining the number of bits and ones in a leaf or internal node

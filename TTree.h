@@ -102,10 +102,6 @@ struct TTree {
 
         Node();
         Node(TTree*, TTree*);
-
-        /// The destructor does nothing, because deletion of the members
-        /// has to be handled by `TTreeNode`, which knows which variant it is
-        ~Node() { }
     } node;
 
     TTree():
@@ -136,6 +132,8 @@ struct TTree {
     unsigned long bits();
     unsigned long ones();
     void updateCounters(long, long);
+    void insertBits(long unsigned, long unsigned);
+    void deleteBits(long unsigned, long unsigned);
 };
 
 #endif //UNTITLED_TTREE_H
