@@ -25,8 +25,8 @@ struct Record {
     unsigned long o;
     unsigned long i;
 
-    Record(unsigned long b, unsigned long o, unsigned long i):
-        b(b), o(o), i(i) {}
+    Record(unsigned long b, unsigned long o, unsigned long i) :
+            b(b), o(o), i(i) {}
 };
 
 struct InternalNode;
@@ -43,15 +43,13 @@ struct InternalNode {
         unsigned long o;
         TTree *P;
 
-        Entry():
-                b(0), o(0), P(nullptr)
-        {}
+        Entry() :
+                b(0), o(0), P(nullptr) {}
 
         explicit Entry(TTree *P);
 
-        Entry(unsigned long b, unsigned long o, TTree *P):
-                b(b), o(o), P(P)
-        {}
+        Entry(unsigned long b, unsigned long o, TTree *P) :
+                b(b), o(o), P(P) {}
 
         /**
          * This function is called in the destructor of `InternalNode`, to
@@ -64,9 +62,8 @@ struct InternalNode {
 
     Entry entries[childCount];
 
-    InternalNode():
-            entries{Entry(), Entry()}
-    {}
+    InternalNode() :
+            entries{Entry(), Entry()} {}
 
     ~InternalNode() {
         for (auto &entry : entries) {
@@ -75,6 +72,7 @@ struct InternalNode {
     }
 
     unsigned long bits();
+
     unsigned long ones();
 };
 
@@ -83,16 +81,15 @@ struct LeafNode {
     bit_vector bv;
 
     /// Constructs a leaf with the given number of bits
-    explicit LeafNode(unsigned long size):
-            bv(size, false)
-    {}
+    explicit LeafNode(unsigned long size) :
+            bv(size, false) {}
 
     /// Constructs a leaf node from the given bit vector
-    explicit LeafNode(bit_vector bv):
-            bv(std::move(bv))
-    {}
+    explicit LeafNode(bit_vector bv) :
+            bv(std::move(bv)) {}
 
     unsigned long bits();
+
     unsigned long ones();
 };
 
@@ -108,46 +105,56 @@ struct TTree {
         LeafNode *leafNode;
 
         Node();
-        Node(TTree*, TTree*);
+
+        Node(TTree *, TTree *);
 
         explicit Node(bit_vector);
     } node;
 
-    TTree():
+    TTree() :
             isLeaf(true),
-            node()
-    {}
+            node() {}
 
-    TTree(TTree *left, TTree *right):
+    TTree(TTree *left, TTree *right) :
             isLeaf(false),
-            node(left, right)
-    {
+            node(left, right) {
         left->parent = this;
         left->indexInParent = 0;
         right->parent = this;
         right->indexInParent = 1;
     }
 
-    explicit TTree(bit_vector bv):
-        isLeaf(true),
-        node(std::move(bv))
-    {}
+    explicit TTree(bit_vector bv) :
+            isLeaf(true),
+            node(std::move(bv)) {}
 
     /// The TTree destructor decides which variant of the union to destroy
     ~TTree();
 
     unsigned long depth();
+
     unsigned long height();
+
     Record findChild(unsigned long);
+
     InternalNode::Entry findLeaf(unsigned long);
+
     unsigned long rank1(unsigned long);
+
     bool access(unsigned long);
+
     bool setBit(unsigned long, bool);
+
     unsigned long bits();
+
     unsigned long ones();
+
     void updateCounters(long, long);
+
     void split();
+
     void insertBits(long unsigned, long unsigned);
+
     void deleteBits(long unsigned, long unsigned);
 };
 

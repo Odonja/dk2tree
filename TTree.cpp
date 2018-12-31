@@ -32,11 +32,10 @@ TTree::~TTree() {
     }
 }
 
-InternalNode::Entry::Entry(TTree *P):
-    b(P->bits()),
-    o(P->ones()),
-    P(P)
-{}
+InternalNode::Entry::Entry(TTree *P) :
+        b(P->bits()),
+        o(P->ones()),
+        P(P) {}
 
 void InternalNode::Entry::remove() {
     delete P;
@@ -55,7 +54,7 @@ unsigned long countOnes(const bit_vector &bv, unsigned long lo, unsigned long hi
     unsigned long tot = 0;
     for (unsigned long i = lo; i < hi; i++) {
         if (bv[i]) {
-            tot ++;
+            tot++;
         }
     }
     return tot;
@@ -135,7 +134,7 @@ unsigned long TTree::rank1(unsigned long n) {
  */
 bool TTree::access(unsigned long n) {
     auto entry = findLeaf(n);
-    return entry.P -> node.leafNode->bv[n - entry.b];
+    return entry.P->node.leafNode->bv[n - entry.b];
 }
 
 /**
@@ -149,7 +148,7 @@ bool TTree::setBit(unsigned long n, bool b) {
     // Find the leaf node that contains this bit
     auto entry = findLeaf(n);
     bit_vector &bv = entry.P->node.leafNode->bv;
-    bool changed = bv[n - entry.b] ^ b;
+    bool changed = b != bv[n - entry.b];
     bv[n - entry.b] = b;
 
     if (changed) {
