@@ -6,6 +6,7 @@
 #define UNTITLED_TTREE_H
 
 #include <vector>
+#include <utility>
 
 typedef std::vector<bool> bit_vector;
 
@@ -81,8 +82,14 @@ struct InternalNode {
 struct LeafNode {
     bit_vector bv;
 
+    /// Constructs a leaf with the given number of bits
     explicit LeafNode(unsigned long size):
             bv(size, false)
+    {}
+
+    /// Constructs a leaf node from the given bit vector
+    explicit LeafNode(bit_vector bv):
+            bv(std::move(bv))
     {}
 
     unsigned long bits();
@@ -102,6 +109,8 @@ struct TTree {
 
         Node();
         Node(TTree*, TTree*);
+
+        explicit Node(bit_vector);
     } node;
 
     TTree():
@@ -118,6 +127,11 @@ struct TTree {
         right->parent = this;
         right->indexInParent = 1;
     }
+
+    explicit TTree(bit_vector bv):
+        isLeaf(true),
+        node(std::move(bv))
+    {}
 
     /// The TTree destructor decides which variant of the union to destroy
     ~TTree();

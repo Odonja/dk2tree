@@ -34,7 +34,7 @@ void accessSetTest() {
 
 unsigned long printOnes(TTree *tree) {
     if (tree -> isLeaf) {
-        unsigned long n = tree->rank1(512);
+        unsigned long n = tree->ones();
         printf("%lu", n);
         return n;
     } else {
@@ -44,6 +44,25 @@ unsigned long printOnes(TTree *tree) {
         printf(" + ");
         unsigned long n2 = printOnes(entries[1].P);
         printf(" = %lu)", n1 + n2);
+        assert(n1 + n2 == tree->ones());
+
+        return n1 + n2;
+    }
+}
+
+unsigned long printBits(TTree *tree) {
+    if (tree -> isLeaf) {
+        unsigned long n = tree->bits();
+        printf("%lu", n);
+        return n;
+    } else {
+        auto &entries = tree->node.internalNode->entries;
+        printf("(");
+        unsigned long n1 = printBits(entries[0].P);
+        printf(" + ");
+        unsigned long n2 = printBits(entries[1].P);
+        printf(" = %lu)", n1 + n2);
+        assert(n1 + n2 == tree->bits());
 
         return n1 + n2;
     }
@@ -78,7 +97,18 @@ void largerAccessSetTest() {
         root->setBit(i, true);
     }
 
-    printf("  Total bits: %lu\n", root->bits());
+    printf("  Total bits: ");
+    printBits(root);
+    printf("\n");
+    printf("  Total ones: ");
+    printOnes(root);
+    printf("\n");
+
+    root->findLeaf(0).P->split();
+
+    printf("  Total bits: ");
+    printBits(root);
+    printf("\n");
     printf("  Total ones: ");
     printOnes(root);
     printf("\n");
@@ -117,6 +147,9 @@ void memTest() {
         auto *i3 = new TTree(l4, l5);
         auto *i2 = new TTree(i4, l3);
         auto *root = new TTree(i2, i3);
+
+        root->findLeaf(0).P->split();
+
         delete root;
     }
 }

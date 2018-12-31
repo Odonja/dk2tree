@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <utility>
 #include "TTree.h"
 
 // Constructors and destructors for data types that can't be in TTree.h
@@ -16,6 +17,11 @@ TTree::Node::Node(TTree *P1, TTree *P2) {
     this->internalNode = new InternalNode();
     internalNode->entries[0] = InternalNode::Entry(P1);
     internalNode->entries[1] = InternalNode::Entry(P2);
+}
+
+TTree::Node::Node(bit_vector bv) {
+    this->internalNode = nullptr;
+    this->leafNode = new LeafNode(std::move(bv));
 }
 
 TTree::~TTree() {
@@ -188,6 +194,11 @@ void TTree::insertBits(long unsigned index, long unsigned count) {
     auto &bv = leaf->node.leafNode->bv;
     bv.insert(bv.begin() + (index - entry.b), count, false);
     leaf->updateCounters(count, 0);
+
+    // Split this node up into two if it exceeds the size limit
+    if (bv.size() > 2 * B) {
+        split();
+    }
 }
 
 /**
@@ -207,6 +218,34 @@ void TTree::deleteBits(long unsigned index, long unsigned count) {
     auto begin = bv.begin();
     bv.erase(begin + start, begin + end);
     leaf->updateCounters(-count, -deletedOnes);
+}
+
+/**
+ * When called on a leaf node, splits the bits in this leaf up into two parts
+ * of (almost) equal size and replaces itself with an internal node with two
+ * children containing those two halves.
+ */
+void TTree::split() {
+    if (!isLeaf) {
+        return;
+    }
+
+    auto &bv = this->node.leafNode->bv;
+    unsigned long size = bv.size();
+    unsigned long size2 = size / 2;
+    size2 -= size2 % (k * k);
+    unsigned long size1 = size - size2;
+
+    auto *leaf1 = new TTree(bit_vector(
+            bv.begin(), bv.begin() + size1
+    ));
+    auto *leaf2 = new TTree(bit_vector(
+            bv.begin() + size1, bv.end()
+    ));
+
+    parent->node.internalNode->entries[indexInParent].P = new TTree(leaf1, leaf2);
+
+    delete this;
 }
 
 /**
