@@ -42,6 +42,12 @@ struct BitVector {
             data(size, false),
             block_counts((size + BLOCK_SIZE - 1) / BLOCK_SIZE, 0) {}
 
+    BitVector(BitVector &from, unsigned long lo, unsigned long hi) :
+            data(from.data.begin() + lo, from.data.begin() + hi),
+            block_counts((hi - lo + BLOCK_SIZE - 1) / BLOCK_SIZE) {
+        recompute();
+    }
+
 private:
     void recompute(unsigned long start = 0);
 };

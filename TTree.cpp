@@ -50,25 +50,6 @@ void InternalNode::Entry::remove() {
 }
 
 /**
- * Counts the number of one-bits in the specified range in the bit vector
- * TODO try optimising by counting per byte
- *
- * @param bv a vector<bool>
- * @param lo an integer with 0 <= lo <= bv.size()
- * @param hi an integer with lo <= hi <= bv.size()
- * @return the number of one-bits in the bits bv[lo] .. bv[hi - 1]
- */
-unsigned long countOnes(const bit_vector &bv, unsigned long lo, unsigned long hi) {
-    unsigned long tot = 0;
-    for (unsigned long i = lo; i < hi; i++) {
-        if (bv[i]) {
-            tot++;
-        }
-    }
-    return tot;
-}
-
-/**
  * Given an integer n, returns the child node containing the n-th bit in this subtree,
  *      as well as the numbers of bits and ones preceding it.
  * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
@@ -132,7 +113,7 @@ InternalNode::Entry TTree::findLeaf(unsigned long n) {
 unsigned long TTree::rank1(unsigned long n) {
     auto entry = findLeaf(n);
     auto &bv = entry.P->node.leafNode->bv;
-    return entry.o + countOnes(bv, 0, n - entry.b);
+    return entry.o + bv.rank1(n - entry.b);
 }
 
 /**
@@ -156,8 +137,7 @@ bool TTree::setBit(unsigned long n, bool b) {
     // Find the leaf node that contains this bit
     auto entry = findLeaf(n);
     bit_vector &bv = entry.P->node.leafNode->bv;
-    bool changed = b != bv[n - entry.b];
-    bv[n - entry.b] = b;
+    bool changed = bv.set(n - entry.b, b);
 
     if (changed) {
         // Change the one-counters all the way up from this leaf
@@ -199,7 +179,7 @@ void TTree::insertBits(long unsigned index, long unsigned count) {
     auto entry = findLeaf(index);
     auto leaf = entry.P;
     auto &bv = leaf->node.leafNode->bv;
-    bv.insert(bv.begin() + (index - entry.b), count, false);
+    bv.insert(index - entry.b, count);
     leaf->updateCounters(count, 0);
 
     // Split this node up into two if it exceeds the size limit
@@ -221,9 +201,9 @@ void TTree::deleteBits(long unsigned index, long unsigned count) {
     auto &bv = leaf->node.leafNode->bv;
     long unsigned start = index - entry.b;
     long unsigned end = start + count;
-    long unsigned deletedOnes = countOnes(bv, start, end);
-    auto begin = bv.begin();
-    bv.erase(begin + start, begin + end);
+    // TODO replace by faster rank over range (O(b - a) instead of O(b + a))
+    long unsigned deletedOnes = (bv.rank1(end) - bv.rank1(start));
+    bv.erase(start, count);
     leaf->updateCounters(-count, -deletedOnes);
 }
 
@@ -243,12 +223,8 @@ void TTree::split() {
     size2 -= size2 % (k * k);
     unsigned long size1 = size - size2;
 
-    auto *leaf1 = new TTree(bit_vector(
-            bv.begin(), bv.begin() + size1
-    ));
-    auto *leaf2 = new TTree(bit_vector(
-            bv.begin() + size1, bv.end()
-    ));
+    auto *leaf1 = new TTree(bit_vector(bv, 0, size1));
+    auto *leaf2 = new TTree(bit_vector(bv, size1, size));
 
     delete this->node.leafNode;
     this->isLeaf = false;
@@ -328,5 +304,5 @@ unsigned long LeafNode::bits() {
 
 unsigned long LeafNode::ones() {
     // Count all ones manually
-    return countOnes(this->bv, 0, bv.size());
+    return bv.rank1(bv.size());
 }

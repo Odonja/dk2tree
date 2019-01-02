@@ -5,10 +5,12 @@
 #ifndef UNTITLED_TTREE_H
 #define UNTITLED_TTREE_H
 
-#include <vector>
+//#include <vector>
+#include "BitVector.h"
 #include <utility>
 
-typedef std::vector<bool> bit_vector;
+//typedef std::vector<bool> bit_vector;
+typedef BitVector bit_vector;
 
 // The three main parameters for the TTree and LTree representation
 // Values taken from section 6.2.1.
@@ -84,7 +86,7 @@ struct LeafNode {
 
     /// Constructs a leaf with the given number of bits
     explicit LeafNode(unsigned long size) :
-            bv(size, false) {}
+            bv(size) {}
 
     /// Constructs a leaf node from the given bit vector
     explicit LeafNode(bit_vector bv) :
