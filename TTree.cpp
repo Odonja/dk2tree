@@ -24,6 +24,14 @@ TTree::Node::Node(bit_vector bv) {
     this->leafNode = new LeafNode(std::move(bv));
 }
 
+InternalNode::InternalNode(TTree *left, TTree *right, TTree *parent) :
+        entries{Entry(left), Entry(right)} {
+    left->parent = parent;
+    left->indexInParent = 0;
+    right->parent = parent;
+    right->indexInParent = 1;
+}
+
 TTree::~TTree() {
     if (isLeaf) {
         delete node.leafNode;
@@ -242,13 +250,9 @@ void TTree::split() {
             bv.begin() + size1, bv.end()
     ));
 
-//    parent->node.internalNode->entries[indexInParent].P = new TTree(leaf1, leaf2);
-//
-//    delete this;
-
     delete this->node.leafNode;
     this->isLeaf = false;
-    this->node.internalNode = new InternalNode(leaf1, leaf2);
+    this->node.internalNode = new InternalNode(leaf1, leaf2, this);
 }
 
 /**

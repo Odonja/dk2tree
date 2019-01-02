@@ -65,8 +65,7 @@ struct InternalNode {
     InternalNode() :
             entries{Entry(), Entry()} {}
 
-    InternalNode(TTree *left, TTree *right):
-        entries{Entry(left), Entry(right)} {}
+    InternalNode(TTree *left, TTree *right, TTree *parent = nullptr);
 
     ~InternalNode() {
         for (auto &entry : entries) {

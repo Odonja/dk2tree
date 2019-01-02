@@ -129,6 +129,46 @@ void largerAccessSetTest() {
 }
 
 /**
+ * Tests the split() function on the root of the tree
+ */
+void splitRoot() {
+    auto *root = new TTree;
+    root->setBit(250, true);
+    root->setBit(300, true);
+    root->split();
+    assert(root->access(250));
+    assert(root->access(300));
+}
+
+/**
+ * Tests the insert() and delete() functions
+ */
+void testInsertDelete() {
+    printf("Testing insert+delete\n");
+    auto *root = new TTree;
+    root->split();
+    root->setBit(250, true);
+    root->setBit(500, true);
+    // Insert 50 bits at position 200, delete bits 450-499
+    root->insertBits(200, 50);
+    // The rest has shifted right by 50 bits so we delete bits starting at 500
+    root->deleteBits(500, 50);
+
+    printf("  Ones:");
+    for (unsigned long i = 0; i < 512; i++) {
+        if (root->access(i)) {
+            printf(" %lu", i);
+        }
+    }
+    printf("\n");
+
+    assert(root->bits() == 512);
+    assert(root->ones() == 2);
+    assert(root->access(300));
+    assert(root->access(500));
+}
+
+/**
  * Creates the tree from `largerAccessSetTest` a million times and destroys it
  * immediately. Ubuntu's resource monitor indicates that the memory usage is
  * constant (instead of rising steadily), indicating that there is no memory leak.
@@ -154,18 +194,9 @@ void memTest() {
     }
 }
 
-void splitRoot() {
-    auto *root = new TTree;
-    root->setBit(250, true);
-    root->setBit(300, true);
-    root->split();
-    assert(root->access(250));
-    assert(root->access(300));
-}
-
 int main() {
     accessSetTest();
     largerAccessSetTest();
     splitRoot();
-    memTest();
+    testInsertDelete();
 }
