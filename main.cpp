@@ -154,8 +154,18 @@ void memTest() {
     }
 }
 
+void splitRoot() {
+    auto *root = new TTree;
+    root->setBit(250, true);
+    root->setBit(300, true);
+    root->split();
+    assert(root->access(250));
+    assert(root->access(300));
+}
+
 int main() {
     accessSetTest();
     largerAccessSetTest();
+    splitRoot();
     memTest();
 }

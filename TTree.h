@@ -65,6 +65,9 @@ struct InternalNode {
     InternalNode() :
             entries{Entry(), Entry()} {}
 
+    InternalNode(TTree *left, TTree *right):
+        entries{Entry(left), Entry(right)} {}
+
     ~InternalNode() {
         for (auto &entry : entries) {
             entry.remove();

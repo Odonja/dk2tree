@@ -242,9 +242,13 @@ void TTree::split() {
             bv.begin() + size1, bv.end()
     ));
 
-    parent->node.internalNode->entries[indexInParent].P = new TTree(leaf1, leaf2);
+//    parent->node.internalNode->entries[indexInParent].P = new TTree(leaf1, leaf2);
+//
+//    delete this;
 
-    delete this;
+    delete this->node.leafNode;
+    this->isLeaf = false;
+    this->node.internalNode = new InternalNode(leaf1, leaf2);
 }
 
 /**
