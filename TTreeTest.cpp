@@ -27,16 +27,9 @@ void treeTestAccessSetbit() {
     node.setBit(17, true);
     printSome(node, 10, 20);
 
-    long unsigned n;
-
-    n = 10;
-    printf("  rank(%lu): %lu\n", n, node.rank1(n));
-
-    n = 15;
-    printf("  rank(%lu): %lu\n", n, node.rank1(n));
-
-    n = 20;
-    printf("  rank(%lu): %lu\n", n, node.rank1(n));
+    assert(node.rank1(10) == 0);
+    assert(node.rank1(15) == 1);
+    assert(node.rank1(20) == 2);
 }
 
 unsigned long printOnes(TTree *tree) {
@@ -105,20 +98,24 @@ void treeTestAccessSetbitLarger() {
     }
 
     printf("  Total bits: ");
-    printBits(root);
+    unsigned long b = printBits(root);
     printf("\n");
     printf("  Total ones: ");
-    printOnes(root);
+    unsigned long o = printOnes(root);
     printf("\n");
+    assert(b == 2560);
+    assert(o == 100);
 
     root->findLeaf(0).P->split();
 
     printf("  Total bits: ");
-    printBits(root);
+    b = printBits(root);
     printf("\n");
     printf("  Total ones: ");
-    printOnes(root);
+    o = printOnes(root);
     printf("\n");
+    assert(b == 2560);
+    assert(o == 100);
 
     // Check that access and rank operations return the correct results
     unsigned long idx = 0;
