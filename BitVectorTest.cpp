@@ -6,9 +6,8 @@
 #define BIT_VECTOR_TEST
 
 #include "BitVector.h"
-#include <cassert>
 
-void bvTestReadWrite() {
+TEST(BitVectorTest, ReadWrite) {
     unsigned long size = 512;
     BitVector bv(size);
     unsigned long toFlip[] = {
@@ -31,51 +30,51 @@ void bvTestReadWrite() {
     for (unsigned long j : toFlip) {
         // All bits in between two entries of toFlip should be zero
         while (i < j) {
-            assert(!bv[i]);
-            assert(bv.rank1(i) == idx);
+            EXPECT_FALSE(bv[i]);
+            EXPECT_EQ(bv.rank1(i), idx);
             i++;
         }
         // The entry in toFlip should be one
-        assert(bv[i]);
-        assert(bv.rank1(i) == idx);
+        EXPECT_TRUE(bv[i]);
+        EXPECT_EQ(bv.rank1(i), idx);
         idx++;
         i++;
     }
 }
 
-void bvTestInsertDelete() {
+TEST(BitVectorTest, InsertDelete) {
     unsigned long size = 512;
     BitVector bv(size);
     bv.set(100, true);
-    assert(bv.rank1(100) == 0);
-    assert(bv.rank1(101) == 1);
+    EXPECT_EQ(bv.rank1(100), 0);
+    EXPECT_EQ(bv.rank1(101), 1);
 
     bv.erase(75, 25);
-    assert(bv.size() == size - 25);
-    assert(bv[75]);
-    assert(!bv[100]);
-    assert(bv.rank1(75) == 0);
-    assert(bv.rank1(76) == 1);
-    assert(bv.rank1(100) == 1);
+    EXPECT_EQ(bv.size(), size - 25);
+    EXPECT_TRUE(bv[75]);
+    EXPECT_FALSE(bv[100]);
+    EXPECT_EQ(bv.rank1(75), 0);
+    EXPECT_EQ(bv.rank1(76), 1);
+    EXPECT_EQ(bv.rank1(100), 1);
 
     bv.insert(76, 100);
-    assert(bv.size() == size + 75);
-    assert(bv.rank1(75) == 0);
-    assert(bv.rank1(76) == 1);
-    assert(bv.rank1(100) == 1);
+    EXPECT_EQ(bv.size(), size + 75);
+    EXPECT_EQ(bv.rank1(75), 0);
+    EXPECT_EQ(bv.rank1(76), 1);
+    EXPECT_EQ(bv.rank1(100), 1);
 
     bv.insert(60, 25);
-    assert(bv.size() == size + 100);
-    assert(bv.rank1(100) == 0);
-    assert(bv.rank1(101) == 1);
-    assert(bv.rank1(125) == 1);
+    EXPECT_EQ(bv.size(), size + 100);
+    EXPECT_EQ(bv.rank1(100), 0);
+    EXPECT_EQ(bv.rank1(101), 1);
+    EXPECT_EQ(bv.rank1(125), 1);
 }
 
 /**
  * For many values of k, create a bit vector with 1's every k bits
  * Then verify that all access and rank operations are correct
  */
-void bvTestPattern() {
+TEST(BitVectorTest, Patterns) {
     unsigned long size = 512;
     for (unsigned long k = 1; k < size; k++) {
         BitVector bv(size);
@@ -83,16 +82,10 @@ void bvTestPattern() {
             bv.set(i, true);
         }
         for (unsigned long i = 0; i < size; i++) {
-            assert(bv[i] == ((i + 1) % k == 0));
-            assert(bv.rank1(i) == i / k);
+            EXPECT_EQ(bv[i], ((i + 1) % k == 0));
+            EXPECT_EQ(bv.rank1(i), i / k);
         }
     }
-}
-
-void bvTestAll() {
-    bvTestReadWrite();
-    bvTestInsertDelete();
-    bvTestPattern();
 }
 
 #endif // BIT_VECTOR_TEST

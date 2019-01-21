@@ -7,69 +7,56 @@
 
 #include "TTree.h"
 #include <cstdio>
-#include <cassert>
 #include <iostream>
 
-void printSome(TTree &node, unsigned long lo, unsigned long hi) {
-    printf("  bits [%lu...%lu] = [%i", lo, hi, node.access(lo));
-    for (unsigned long i = lo + 1; i < hi; i++) {
-        printf(", %i", node.access(i));
-    }
-    printf("]\n");
-}
-
-void treeTestAccessSetbit() {
-    printf("Testing access+setbit+rank1 on leaf\n");
+TEST(TTreeTest, AccessSetBit) {
     TTree node;
 
-    printSome(node, 10, 20);
+    for (unsigned long i = 10; i < 20; i++) {
+        EXPECT_FALSE(node.access(i)) << "Bit at position " << i << " is incorrectly set to 1";
+    }
+
     node.setBit(13, true);
     node.setBit(17, true);
-    printSome(node, 10, 20);
+    for (unsigned long i = 10; i < 20; i++) {
+        EXPECT_EQ(node.access(i), i == 13 || i == 17)
+                            << "Bit at position " << i << " is incorrectly set to " << node.access(i);
+    }
 
-    assert(node.rank1(10) == 0);
-    assert(node.rank1(15) == 1);
-    assert(node.rank1(20) == 2);
+    EXPECT_EQ(node.rank1(10), 0);
+    EXPECT_EQ(node.rank1(15), 1);
+    EXPECT_EQ(node.rank1(20), 2);
 }
 
-unsigned long printOnes(TTree *tree) {
+unsigned long checkOnes(TTree *tree) {
     if (tree->isLeaf) {
         unsigned long n = tree->ones();
-        printf("%lu", n);
         return n;
     } else {
         auto &entries = tree->node.internalNode->entries;
-        printf("(");
-        unsigned long n1 = printOnes(entries[0].P);
-        printf(" + ");
-        unsigned long n2 = printOnes(entries[1].P);
-        printf(" = %lu)", n1 + n2);
-        assert(n1 + n2 == tree->ones());
+        unsigned long n1 = checkOnes(entries[0].P);
+        unsigned long n2 = checkOnes(entries[1].P);
+        EXPECT_EQ(n1 + n2, tree->ones());
 
         return n1 + n2;
     }
 }
 
-unsigned long printBits(TTree *tree) {
+unsigned long checkBits(TTree *tree) {
     if (tree->isLeaf) {
         unsigned long n = tree->bits();
-        printf("%lu", n);
         return n;
     } else {
         auto &entries = tree->node.internalNode->entries;
-        printf("(");
-        unsigned long n1 = printBits(entries[0].P);
-        printf(" + ");
-        unsigned long n2 = printBits(entries[1].P);
-        printf(" = %lu)", n1 + n2);
-        assert(n1 + n2 == tree->bits());
+        unsigned long n1 = checkBits(entries[0].P);
+        unsigned long n2 = checkBits(entries[1].P);
+        EXPECT_EQ(n1 + n2, tree->bits());
 
         return n1 + n2;
     }
 }
 
-void treeTestAccessSetbitLarger() {
-    printf("Testing access+setbit+rank1 on larger tree\n");
+TEST(TTreeTest, AccessSetBit2) {
     // Create example tree with 5 leaves (=2560 bits)
     auto *l1 = new TTree;
     auto *l2 = new TTree;
@@ -97,25 +84,13 @@ void treeTestAccessSetbitLarger() {
         root->setBit(i, true);
     }
 
-    printf("  Total bits: ");
-    unsigned long b = printBits(root);
-    printf("\n");
-    printf("  Total ones: ");
-    unsigned long o = printOnes(root);
-    printf("\n");
-    assert(b == 2560);
-    assert(o == 100);
+    EXPECT_EQ(checkBits(root), 2560);
+    EXPECT_EQ(checkOnes(root), 100);
 
     root->findLeaf(0).P->split();
 
-    printf("  Total bits: ");
-    b = printBits(root);
-    printf("\n");
-    printf("  Total ones: ");
-    o = printOnes(root);
-    printf("\n");
-    assert(b == 2560);
-    assert(o == 100);
+    EXPECT_EQ(checkBits(root), 2560);
+    EXPECT_EQ(checkOnes(root), 100);
 
     // Check that access and rank operations return the correct results
     unsigned long idx = 0;
@@ -127,28 +102,29 @@ void treeTestAccessSetbitLarger() {
             ac2 = true;
             idx++;
         }
-        assert(ac == ac2);
-        assert(rk == rk2);
+        EXPECT_EQ(ac, ac2);
+        EXPECT_EQ(rk, rk2);
     }
 }
 
 /**
  * Tests the split() function on the root of the tree
  */
-void treeTestSplitRoot() {
+TEST(TTreeTest, SplitRoot) {
     auto *root = new TTree;
     root->setBit(250, true);
     root->setBit(300, true);
     root->split();
-    assert(root->access(250));
-    assert(root->access(300));
+
+    for (unsigned long i = 0; i < 512; i++) {
+        EXPECT_EQ(root->access(i), i == 250 || i == 300) << "Bit at position " << i << " is incorrectly set to 1";
+    }
 }
 
 /**
  * Tests the insert() and delete() functions
  */
-void treeTestInsertDelete() {
-    printf("Testing insert+delete\n");
+TEST(TTreeTest, InsertDelete) {
     auto *root = new TTree;
     root->split();
     root->setBit(250, true);
@@ -158,18 +134,13 @@ void treeTestInsertDelete() {
     // The rest has shifted right by 50 bits so we delete bits starting at 500
     root->deleteBits(500, 50);
 
-    printf("  Ones:");
-    for (unsigned long i = 0; i < 512; i++) {
-        if (root->access(i)) {
-            printf(" %lu", i);
-        }
-    }
-    printf("\n");
+    // Exactly bits 300 and 500 should be true
+    EXPECT_EQ(root->bits(), 512);
+    EXPECT_EQ(root->ones(), 2);
 
-    assert(root->bits() == 512);
-    assert(root->ones() == 2);
-    assert(root->access(300));
-    assert(root->access(500));
+    for (unsigned long i = 0; i < 512; i++) {
+        EXPECT_EQ(root->access(i), i == 300 || i == 500);
+    }
 }
 
 /**
@@ -201,11 +172,8 @@ void treeTestMemoryLeaking() {
 /**
  * Runs all the different tests except for the memory test (which takes very long)
  */
-void treeTestAll() {
-    treeTestAccessSetbit();
-    treeTestAccessSetbitLarger();
-    treeTestSplitRoot();
-    treeTestInsertDelete();
+int treeTestAll(int argc, char **argv) {
+    return 0;
 }
 
 #endif // TTREE_TEST

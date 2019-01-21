@@ -7,5 +7,8 @@ set(CMAKE_CXX_STANDARD 14)
 include_directories(~/include)
 link_directories(~/lib)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 add_executable(untitled main.cpp TTree.cpp TTree.h BitVector.cpp BitVector.h)
-target_link_libraries(untitled LINK_PUBLIC sdsl divsufsort divsufsort64)
+target_link_libraries(untitled LINK_PUBLIC sdsl divsufsort divsufsort64 gtest Threads::Threads)
