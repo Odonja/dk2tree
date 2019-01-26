@@ -1,13 +1,8 @@
-#include <sdsl/suffix_arrays.hpp>
-#include <fstream>
+#include "gtest/gtest.h"
+#include "BitVectorTest.cpp"
+#include "TTreeTest.cpp"
 
-using namespace sdsl;
-
-int main() {
-    csa_wt<> fm_index;
-    construct_im(fm_index, "mississippi!", 1);
-    std::cout << "'si' occurs " << count(fm_index,"si") << " times.\n";
-    store_to_file(fm_index,"fm_index-file.sdsl");
-    std::ofstream out("fm_index-file.sdsl.html");
-    write_structure<HTML_FORMAT>(fm_index,out);
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

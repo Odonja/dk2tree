@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(untitled)
+project(dk2tree)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -7,5 +7,8 @@ set(CMAKE_CXX_STANDARD 14)
 include_directories(~/include)
 link_directories(~/lib)
 
-add_executable(untitled main.cpp TTree.cpp TTree.h)
-target_link_libraries(untitled LINK_PUBLIC sdsl divsufsort divsufsort64)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+add_executable(dk2tree main.cpp TTree.cpp TTree.h BitVector.cpp BitVector.h)
+target_link_libraries(dk2tree LINK_PUBLIC sdsl divsufsort divsufsort64 gtest Threads::Threads)
