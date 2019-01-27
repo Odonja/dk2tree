@@ -24,20 +24,48 @@ struct BitVector {
     vector<bool> data;
     vector<uint8_t> block_counts;
 
+    /**
+ * Gives the value of the n-th bit in the bitvector. This is a read-only operator,
+ * since the block_counts must also be updated when writing
+ *
+ * @param n an index with 0 <= n < bv.size()
+ * @return the value of the n-th bit of the bitvector
+ */
     const bool operator[](unsigned long n);
 
+    /**
+ * Sets the n-th bit to value b, and returns true if the value changed
+ * @param n an index with 0 <= n < size()
+ * @param b a boolean
+ * @return true iff the previous value of bit n was unequal to b
+ */
     const bool set(unsigned long n, bool b);
 
+    /**
+ * Performs the rank-operation on this bitvector
+ * @param n an index with 0 <= n <= size()
+ * @return the number of ones in the bits [0 ... n)
+ */
     unsigned long rank1(unsigned long n);
 
     unsigned long rangeRank1(unsigned long lo, unsigned long hi);
 
+    /**
+ * Inserts `size` 0-bits at position `begin`
+ * @param begin an index with 0 <= begin <= size()
+ * @param size the number of bits to be inserted
+ */
     void insert(unsigned long begin, unsigned long size);
 
     void insert(unsigned long begin, const BitVector &from, unsigned long lo, unsigned long hi);
 
     void append(const BitVector &from, unsigned long lo, unsigned long hi);
 
+    /**
+ * Deletes the indicated number of bits starting at the indicated index
+ * @param begin an index with 0 <= begin < size()
+ * @param size the number of bits to be deleted. Should satisfy begin + size <= size()
+ */
     void erase(unsigned long begin, unsigned long size);
 
     unsigned long size() {
@@ -55,6 +83,11 @@ struct BitVector {
     }
 
 private:
+    /**
+ * Private method to re-compute all the values of block_counts from a certain
+ * starting point. Used when inserting or deleting bits
+ * @param start the first bit that may have changed and require updating the counters
+ */
     void recompute(unsigned long start = 0);
 };
 
