@@ -30,7 +30,13 @@ struct BitVector {
 
     unsigned long rank1(unsigned long n);
 
+    unsigned long rangeRank1(unsigned long lo, unsigned long hi);
+
     void insert(unsigned long begin, unsigned long size);
+
+    void insert(unsigned long begin, const BitVector &from, unsigned long lo, unsigned long hi);
+
+    void append(const BitVector &from, unsigned long lo, unsigned long hi);
 
     void erase(unsigned long begin, unsigned long size);
 
@@ -42,7 +48,7 @@ struct BitVector {
             data(size, false),
             block_counts((size + BLOCK_SIZE - 1) / BLOCK_SIZE, 0) {}
 
-    BitVector(BitVector &from, unsigned long lo, unsigned long hi) :
+    BitVector(const BitVector &from, unsigned long lo, unsigned long hi) :
             data(from.data.begin() + lo, from.data.begin() + hi),
             block_counts((hi - lo + BLOCK_SIZE - 1) / BLOCK_SIZE) {
         recompute();

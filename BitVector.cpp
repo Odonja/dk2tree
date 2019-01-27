@@ -55,6 +55,11 @@ unsigned long BitVector::rank1(unsigned long n) {
     return tot;
 }
 
+unsigned long BitVector::rangeRank1(unsigned long lo, unsigned long hi) {
+    // TODO optimise
+    return rank1(hi) - rank1(lo);
+}
+
 /**
  * Inserts `size` 0-bits at position `begin`
  * @param begin an index with 0 <= begin <= size()
@@ -74,6 +79,18 @@ void BitVector::insert(unsigned long begin, unsigned long size) {
         block_counts.resize((data.size() + BLOCK_SIZE - 1) / BLOCK_SIZE, 0);
         recompute(begin);
     }
+}
+
+void BitVector::insert(unsigned long begin, const BitVector &from, unsigned long lo, unsigned long hi) {
+    data.insert(data.begin() + begin, from.data.begin() + lo, from.data.begin() + hi);
+    block_counts.resize((data.size() + BLOCK_SIZE - 1) / BLOCK_SIZE, 0);
+    recompute(); // TODO: maybe do more efficient update if inserted is whole number of blocks
+}
+
+void BitVector::append(const BitVector &from, unsigned long lo, unsigned long hi) {
+    data.insert(data.end(), from.data.begin() + lo, from.data.begin() + hi);
+    block_counts.resize((data.size() + BLOCK_SIZE - 1) / BLOCK_SIZE, 0);
+    recompute(); // TODO: maybe do more efficient update if inserted is whole number of blocks
 }
 
 /**
