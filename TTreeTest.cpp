@@ -253,7 +253,6 @@ TEST(TTreeTest, BPlusTest0) {
         }
         ASSERT_TRUE(validate(root));
         ASSERT_TRUE(validateSize(root));
-        printf("\n\n");
     }
     // Set some bits to 1
     for (unsigned long i = 0; i * i < n; i++) {
