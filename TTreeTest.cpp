@@ -264,8 +264,6 @@ TEST(TTreeTest, BPlusTest0) {
         ASSERT_TRUE(validateSize(root));
     }
 
-    print(root);
-
     // EXPECT that the access() and rank() operations are the same
     // in the TTree as in the reference vector
     unsigned long rank = 0;

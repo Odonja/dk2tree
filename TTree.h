@@ -2,21 +2,16 @@
 // Created by anneke on 18/12/18.
 //
 
-#ifndef UNTITLED_TTREE_H
-#define UNTITLED_TTREE_H
+#ifndef DK2TREE_TTREE_H
+#define DK2TREE_TTREE_H
 
-//#include <vector>
 #include "BitVector.h"
 #include <utility>
 
-//typedef std::vector<bool> bit_vector;
-typedef BitVector bit_vector;
-
 // The three main parameters for the TTree and LTree representation
-// Values taken from section 6.2.1.
-static const unsigned int k = 2;
-static const unsigned int block = k*k;
-static const unsigned int B = 512;
+static const unsigned int k = 2; // The `k` in the k2-tree
+static const unsigned int block = k*k; // The number of bits in one block of the bit vector
+static const unsigned int B = 512; // The maximum size (in bits) of a leaf bitvector
 
 // The maximum/minimum number of children/blocks an internal node/leaf node
 // is allowed to have, as per the rules of the B+tree
@@ -104,14 +99,14 @@ struct InternalNode {
 
 /** A leaf node, which consists of a bitvector (represented by vector<bool>) */
 struct LeafNode {
-    bit_vector bv;
+    BitVector bv;
 
     /// Constructs a leaf with the given number of bits
     explicit LeafNode(unsigned long size) :
             bv(size) {}
 
     /// Constructs a leaf node from the given bit vector
-    explicit LeafNode(bit_vector bv) :
+    explicit LeafNode(BitVector bv) :
             bv(std::move(bv)) {}
 
     unsigned long bits();
@@ -134,7 +129,7 @@ struct TTree {
 
         Node(TTree *, TTree *);
 
-        explicit Node(bit_vector);
+        explicit Node(BitVector);
 
         explicit Node(unsigned long);
     } node;
@@ -152,7 +147,7 @@ struct TTree {
         right->indexInParent = 1;
     }
 
-    explicit TTree(bit_vector bv) :
+    explicit TTree(BitVector bv) :
             isLeaf(true),
             node(std::move(bv)) {}
 
@@ -218,4 +213,4 @@ struct TTree {
     void moveRightLeaf();
 };
 
-#endif //UNTITLED_TTREE_H
+#endif //DK2TREE_TTREE_H

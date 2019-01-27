@@ -17,7 +17,7 @@ TTree::Node::Node(TTree *P1, TTree *P2) {
     this->internalNode = new InternalNode(P1, P2);
 }
 
-TTree::Node::Node(bit_vector bv) {
+TTree::Node::Node(BitVector bv) {
     this->internalNode = nullptr;
     this->leafNode = new LeafNode(std::move(bv));
 }
@@ -147,7 +147,7 @@ bool TTree::access(unsigned long n) {
 bool TTree::setBit(unsigned long n, bool b) {
     // Find the leaf node that contains this bit
     auto entry = findLeaf(n);
-    bit_vector &bv = entry.P->node.leafNode->bv;
+    BitVector &bv = entry.P->node.leafNode->bv;
     bool changed = bv.set(n - entry.b, b);
 
     if (changed) {
@@ -379,94 +379,94 @@ TTree *TTree::checkSizeLower() {
 
 bool TTree::trySpillInternal() {
     if (parent == nullptr) {
-        printf("cant spill internal node at root\n");
+//        printf("cant spill internal node at root\n");
         return false;
     }
     unsigned long idx = indexInParent;
     unsigned long n = parent->size();
     auto &entries = parent->node.internalNode->entries;
     if (idx > 0 && entries[idx - 1].P->size() < nodeSizeMax) {
-        printf("spilling internal node left\n");
+//        printf("spilling internal node left\n");
         this->moveLeftInternal();
         return true;
     } else if (idx + 1 < n && entries[idx + 1].P->size() < nodeSizeMax) {
-        printf("spilling internal node right\n");
+//        printf("spilling internal node right\n");
         this->moveRightInternal();
         return true;
     } else {
-        printf("could not spill internal node\n");
+//        printf("could not spill internal node\n");
         return false;
     }
 }
 
 bool TTree::tryStealInternal() {
     if (parent == nullptr) {
-        printf("cant steal internal node at root\n");
+//        printf("cant steal internal node at root\n");
         return false;
     }
     unsigned long idx = indexInParent;
     unsigned long n = parent->size();
     auto &entries = parent->node.internalNode->entries;
     if (idx > 0 && entries[idx - 1].P->size() > nodeSizeMin) {
-        printf("stealing internal node left\n");
+//        printf("stealing internal node left\n");
         entries[idx - 1].P->moveRightInternal();
         return true;
     } else if (idx + 1 < n && entries[idx + 1].P->size() > nodeSizeMin) {
-        printf("stealing internal node right\n");
+//        printf("stealing internal node right\n");
         entries[idx + 1].P->moveLeftInternal();
         return true;
     } else {
-        printf("could not steal internal node\n");
+//        printf("could not steal internal node\n");
         return false;
     }
 }
 
 bool TTree::trySpillLeaf() {
     if (parent == nullptr) {
-        printf("cant spill leaf at root\n");
+//        printf("cant spill leaf at root\n");
         return false;
     }
     unsigned long idx = indexInParent;
     unsigned long n = parent->size();
     auto &entries = parent->node.internalNode->entries;
     if (idx > 0 && entries[idx - 1].P->size() < leafSizeMax) {
-        printf("spilling leaf left\n");
+//        printf("spilling leaf left\n");
         this->moveLeftLeaf();
         return true;
     } else if (idx + 1 < n && entries[idx + 1].P->size() < leafSizeMax) {
-        printf("spilling leaf right\n");
+//        printf("spilling leaf right\n");
         this->moveRightLeaf();
         return true;
     } else {
-        printf("could not spill leaf\n");
+//        printf("could not spill leaf\n");
         return false;
     }
 }
 
 bool TTree::tryStealLeaf() {
     if (parent == nullptr) {
-        printf("cant steal leaf at root\n");
+//        printf("cant steal leaf at root\n");
         return false;
     }
     unsigned long idx = indexInParent;
     unsigned long n = parent->size();
     auto &entries = parent->node.internalNode->entries;
     if (idx > 0 && entries[idx - 1].P->size() > leafSizeMin) {
-        printf("stealing leaf from left\n");
+//        printf("stealing leaf from left\n");
         entries[idx - 1].P->moveRightLeaf();
         return true;
     } else if (idx + 1 < n && entries[idx + 1].P->size() > leafSizeMin) {
-        printf("stealing leaf from right\n");
+//        printf("stealing leaf from right\n");
         entries[idx + 1].P->moveLeftLeaf();
         return true;
     } else {
-        printf("could not steal leaf\n");
+//        printf("could not steal leaf\n");
         return false;
     }
 }
 
 void TTree::moveLeftInternal() {
-    printf("moving internal node left\n");
+//    printf("moving internal node left\n");
     TTree *parent = this->parent;
     unsigned long idx = this->indexInParent;
     TTree *sibling = parent->node.internalNode->entries[idx - 1].P;
@@ -488,7 +488,7 @@ void TTree::moveLeftInternal() {
 }
 
 void TTree::moveRightInternal() {
-    printf("moving internal node right\n");
+//    printf("moving internal node right\n");
     unsigned long idx = this->indexInParent;
     TTree *sibling = parent->node.internalNode->entries[idx + 1].P;
 
@@ -509,7 +509,7 @@ void TTree::moveRightInternal() {
 }
 
 void TTree::moveLeftLeaf() {
-    printf("moving leaf left\n");
+//    printf("moving leaf left\n");
     unsigned long idx = indexInParent;
     TTree *sibling = parent->node.internalNode->entries[idx - 1].P;
     // Take the first k*k block of `this`, and append it to `sibling`
@@ -529,7 +529,7 @@ void TTree::moveLeftLeaf() {
 }
 
 void TTree::moveRightLeaf() {
-    printf("moving leaf right\n");
+//    printf("moving leaf right\n");
     unsigned long idx = indexInParent;
     TTree *sibling = parent->node.internalNode->entries[idx + 1].P;
     // Take the first k*k block of `this`, and append it to `sibling`
@@ -574,11 +574,11 @@ TTree *TTree::splitInternal() {
     newNode->node.internalNode->size = n - mid;
     node.internalNode->size = mid;
     if (parent == nullptr) {
-        printf("splitting internal node = root\n");
+//        printf("splitting internal node = root\n");
         auto *newRoot = new TTree(this, newNode);
         return newRoot;
     } else {
-        printf("splitting internal node != root\n");
+//        printf("splitting internal node != root\n");
         parent->node.internalNode->entries[indexInParent].b -= d_b;
         parent->node.internalNode->entries[indexInParent].o -= d_o;
         parent->node.internalNode->insert(indexInParent + 1, InternalNode::Entry(newNode));
@@ -595,11 +595,11 @@ TTree *TTree::splitLeaf() {
     left.erase(mid, n - mid);
     auto *newNode = new TTree(right);
     if (parent == nullptr) {
-        printf("splitting leaf = root\n");
+//        printf("splitting leaf = root\n");
         auto *newRoot = new TTree(this, newNode);
         return newRoot;
     } else {
-        printf("splitting leaf != root\n");
+//        printf("splitting leaf != root\n");
         unsigned long idx = indexInParent;
         newNode->parent = parent;
         InternalNode::Entry entry(newNode);
@@ -627,11 +627,11 @@ TTree *TTree::mergeInternal() {
         left = parent->node.internalNode->entries[idx - 1].P;
         right = this;
         idx--;
-        printf("merging internal node left\n");
+//        printf("merging internal node left\n");
     } else {
         left = this;
         right = parent->node.internalNode->entries[idx + 1].P;
-        printf("merging internal node right\n");
+//        printf("merging internal node right\n");
     }
 
     // Merge `left` and `right` into one node
@@ -663,11 +663,11 @@ TTree *TTree::mergeLeaf() {
         left = parent->node.internalNode->entries[idx].P;
         right= this;
         idx--;
-        printf("merging leaf left\n");
+//        printf("merging leaf left\n");
     } else {
         left = this;
         right = parent->node.internalNode->entries[idx + 1].P;
-        printf("merging leaf right\n");
+//        printf("merging leaf right\n");
     }
     auto &leftBits = left->node.leafNode->bv;
     auto &rightBits = right->node.leafNode->bv;
