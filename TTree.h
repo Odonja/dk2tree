@@ -233,17 +233,17 @@ struct TTree {
     ~TTree();
 
     /**
- * Returns the depth of this node, which is the length of the path from this
- * node to the root
- * @return the depth of `this`
- */
+     * Returns the depth of this node, which is the length of the path from this
+     * node to the root
+     * @return the depth of `this`
+     */
     unsigned long depth();
 
     /**
- * Returns the height of this node, which is the length of the longest path from
- * this node to any leaf in its subtree.
- * @return the height of `this`
- */
+     * Returns the height of this node, which is the length of the longest path from
+     * this node to any leaf in its subtree.
+     * @return the height of `this`
+     */
     unsigned long height();
 
     /**
@@ -255,50 +255,50 @@ struct TTree {
     unsigned long size();
 
     /**
- * Given an integer n, returns the child node containing the n-th bit in this subtree,
- *      as well as the numbers of bits and ones preceding it.
- * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
- * @return  a TTree::InternalNode::Entry with:
- *      b = number of bits preceding this node in the TTree
- *      o = number of ones preceding this node in the TTree
- *      i = the index of the relevant subtree in the `entries` of `this`
- */
+     * Given an integer n, returns the child node containing the n-th bit in this subtree,
+     *      as well as the numbers of bits and ones preceding it.
+     * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
+     * @return  a TTree::InternalNode::Entry with:
+     *      b = number of bits preceding this node in the TTree
+     *      o = number of ones preceding this node in the TTree
+     *      i = the index of the relevant subtree in the `entries` of `this`
+     */
     Record findChild(unsigned long);
 
     /**
- * Given an integer n, returns the leaf containing the n-th bit of the bitvector,
- *      as well as the numbers of bits and ones preceding this leaf node.
- * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
- * @return  a TTree::InternalNode::Entry with:
- *      b = number of bits preceding this node in the TTree
- *      o = number of ones preceding this node in the TTree
- *      P = a pointer to the leaf node containing the n-th bit
- * Note that P is strictly just a pointer to a `TTreeNode`, as defined by the `entry` struct
- * But the union is always of the `LeafNode` variant.
- */
+     * Given an integer n, returns the leaf containing the n-th bit of the bitvector,
+     *      as well as the numbers of bits and ones preceding this leaf node.
+     * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
+     * @return  a TTree::InternalNode::Entry with:
+     *      b = number of bits preceding this node in the TTree
+     *      o = number of ones preceding this node in the TTree
+     *      P = a pointer to the leaf node containing the n-th bit
+     * Note that P is strictly just a pointer to a `TTreeNode`, as defined by the `entry` struct
+     * But the union is always of the `LeafNode` variant.
+     */
     InternalNode::Entry findLeaf(unsigned long);
 
     /**
- * Performs the `rank` operation on the bitvector represented by this tree
- * @param n  an integer with 0 <= n < (numbers of bits in the tree)
- * @return the number of 1-bits in the tree up to position n
- */
+     * Performs the `rank` operation on the bitvector represented by this tree
+     * @param n  an integer with 0 <= n < (numbers of bits in the tree)
+     * @return the number of 1-bits in the tree up to position n
+     */
     unsigned long rank1(unsigned long);
 
     /**
- * Performs the `access` operation on this subtree
- * @param n the index of a bit in the `TTree`
- * @return the value of the `n`-th bit in the tree
- */
+     * Performs the `access` operation on this subtree
+     * @param n the index of a bit in the `TTree`
+     * @return the value of the `n`-th bit in the tree
+     */
     bool access(unsigned long);
 
     /**
- * Sets the bit at position n to the value of b
- * @param n the index of the bit to set
- * @param b the value to set the bit to
- * @return true if this bit changed, e.g.
- *      if the previous value of the bit was unequal to b
- */
+     * Sets the bit at position n to the value of b
+     * @param n the index of the bit to set
+     * @param b the value to set the bit to
+     * @return true if this bit changed, e.g.
+     *      if the previous value of the bit was unequal to b
+     */
     bool setBit(unsigned long, bool);
 
     /**
@@ -314,38 +314,38 @@ struct TTree {
     unsigned long ones();
 
     /**
- * Changes the values of the counters `b` and `o` of all the nodes whose
- * subtree contains this node. Used to update these counters after modifying
- * the underlying bitvector, or the structure of the tree.
- *
- * @param dBits the change in the number of bits (e.g. 4 when 4 bits were inserted)
- * @param dOnes the change in the number of ones (e.g. 2 when 2 zeros were set to ones)
- */
+     * Changes the values of the counters `b` and `o` of all the nodes whose
+     * subtree contains this node. Used to update these counters after modifying
+     * the underlying bitvector, or the structure of the tree.
+     *
+     * @param dBits the change in the number of bits (e.g. 4 when 4 bits were inserted)
+     * @param dOnes the change in the number of ones (e.g. 2 when 2 zeros were set to ones)
+     */
     void updateCounters(long, long);
 
     /**
- * Inserts the given number of bits (set to zero) at the given position in the tree
- *
- * @param index the position at which to insert bits
- * @param count the number of bits to insert
+     * Inserts the given number of bits (set to zero) at the given position in the tree
+     *
+     * @param index the position at which to insert bits
+     * @param count the number of bits to insert
      *
      * @return nullptr in most cases, but a pointer to the new root node
      * if this insert operation created a new root (e.g. when the height of the
      * tree increases)
- */
+     */
     TTree *insertBits(long unsigned, long unsigned);
 
     /**
- * Deletes the given number of bits in the subtree, assuming they are all in the
- * same leaf node. This will be the case if a group of k^2 bits are deleted
- *
- * @param index the position of the first bit to delete
- * @param count the number of bits to delete
+     * Deletes the given number of bits in the subtree, assuming they are all in the
+     * same leaf node. This will be the case if a group of k^2 bits are deleted
+     *
+     * @param index the position of the first bit to delete
+     * @param count the number of bits to delete
      *
      * @return nullptr in most cases, but a pointer to the new root node
      * if this insert operation changed the root (e.g. when the height of the
      * tree decreases)
- */
+     */
     TTree *deleteBits(long unsigned, long unsigned);
 
 private:
