@@ -53,15 +53,6 @@ void InternalNode::Entry::remove() {
     delete P;
 }
 
-/**
- * Given an integer n, returns the child node containing the n-th bit in this subtree,
- *      as well as the numbers of bits and ones preceding it.
- * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
- * @return  a TTree::InternalNode::Entry with:
- *      b = number of bits preceding this node in the TTree
- *      o = number of ones preceding this node in the TTree
- *      i = the index of the relevant subtree in the `entries` of `this`
- */
 Record TTree::findChild(unsigned long n) {
     if (this->isLeaf) {
         return {0, 0, 0};
@@ -92,17 +83,6 @@ Record TTree::findChild(unsigned long n) {
     // TODO throw exception or something
 }
 
-/**
- * Given an integer n, returns the leaf containing the n-th bit of the bitvector,
- *      as well as the numbers of bits and ones preceding this leaf node.
- * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
- * @return  a TTree::InternalNode::Entry with:
- *      b = number of bits preceding this node in the TTree
- *      o = number of ones preceding this node in the TTree
- *      P = a pointer to the leaf node containing the n-th bit
- * Note that P is strictly just a pointer to a `TTreeNode`, as defined by the `entry` struct
- * But the union is always of the `LeafNode` variant.
- */
 InternalNode::Entry TTree::findLeaf(unsigned long n) {
     auto *current = this;
     unsigned long bitsBefore = 0;
@@ -116,34 +96,17 @@ InternalNode::Entry TTree::findLeaf(unsigned long n) {
     return {bitsBefore, onesBefore, current};
 }
 
-/**
- * Performs the `rank` operation on the bitvector represented by this tree
- * @param n  an integer with 0 <= n < (numbers of bits in the tree)
- * @return the number of 1-bits in the tree up to position n
- */
 unsigned long TTree::rank1(unsigned long n) {
     auto entry = findLeaf(n);
     auto &bv = entry.P->node.leafNode->bv;
     return entry.o + bv.rank1(n - entry.b);
 }
 
-/**
- * Performs the `access` operation on this subtree
- * @param n the index of a bit in the `TTree`
- * @return the value of the `n`-th bit in the tree
- */
 bool TTree::access(unsigned long n) {
     auto entry = findLeaf(n);
     return entry.P->node.leafNode->bv[n - entry.b];
 }
 
-/**
- * Sets the bit at position n to the value of b
- * @param n the index of the bit to set
- * @param b the value to set the bit to
- * @return true if this bit changed, e.g.
- *      if the previous value of the bit was unequal to b
- */
 bool TTree::setBit(unsigned long n, bool b) {
     // Find the leaf node that contains this bit
     auto entry = findLeaf(n);
@@ -157,14 +120,6 @@ bool TTree::setBit(unsigned long n, bool b) {
     return changed;
 }
 
-/**
- * Changes the values of the counters `b` and `o` of all the nodes whose
- * subtree contains this node. Used to update these counters after modifying
- * the underlying bitvector, or the structure of the tree.
- *
- * @param dBits the change in the number of bits (e.g. 4 when 4 bits were inserted)
- * @param dOnes the change in the number of ones (e.g. 2 when 2 zeros were set to ones)
- */
 void TTree::updateCounters(long dBits, long dOnes) {
     TTree *current = this;
     // Go up in the tree until we reach the root
@@ -180,12 +135,6 @@ void TTree::updateCounters(long dBits, long dOnes) {
     }
 }
 
-/**
- * Inserts the given number of bits (set to zero) at the given position in the tree
- *
- * @param index the position at which to insert bits
- * @param count the number of bits to insert
- */
 TTree *TTree::insertBits(long unsigned index, long unsigned count) {
     auto entry = findLeaf(index);
     auto leaf = entry.P;
@@ -197,13 +146,6 @@ TTree *TTree::insertBits(long unsigned index, long unsigned count) {
     return leaf->checkSizeUpper();
 }
 
-/**
- * Deletes the given number of bits in the subtree, assuming they are all in the
- * same leaf node. This will be the case if a group of k^2 bits are deleted
- *
- * @param index the position of the first bit to delete
- * @param count the number of bits to delete
- */
 TTree *TTree::deleteBits(long unsigned index, long unsigned count) {
     auto entry = findLeaf(index);
     auto leaf = entry.P;
@@ -216,11 +158,6 @@ TTree *TTree::deleteBits(long unsigned index, long unsigned count) {
     return leaf->checkSizeLower();
 }
 
-/**
- * Returns the depth of this node, which is the length of the path from this
- * node to the root
- * @return the depth of `this`
- */
 unsigned long TTree::depth() {
     if (parent == nullptr) {
         return 0;
@@ -229,11 +166,6 @@ unsigned long TTree::depth() {
     }
 }
 
-/**
- * Returns the height of this node, which is the length of the longest path from
- * this node to any leaf in its subtree.
- * @return the height of `this`
- */
 unsigned long TTree::height() {
     if (isLeaf) {
         return 0;
@@ -258,7 +190,6 @@ unsigned long TTree::size() {
     }
 }
 
-/// Methods for determining the number of bits and ones in a leaf or internal node
 unsigned long TTree::bits() {
     if (isLeaf) {
         return node.leafNode->bits();
