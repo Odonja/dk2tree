@@ -15,10 +15,15 @@ typedef BitVector bit_vector;
 // The three main parameters for the TTree and LTree representation
 // Values taken from section 6.2.1.
 static const unsigned int k = 2;
+static const unsigned int block = k*k;
 static const unsigned int B = 512;
-static const unsigned int e = 3;
 
-static const unsigned int childCount = 2;
+// The maximum/minimum number of children/blocks an internal node/leaf node
+// is allowed to have, as per the rules of the B+tree
+static const unsigned int nodeSizeMax = 31;
+static const unsigned int nodeSizeMin = (nodeSizeMax + 1) / 2;
+static const unsigned int leafSizeMax = B / block;
+static const unsigned int leafSizeMin = (leafSizeMax + 1) / 2;
 
 /// Record type containing the number pf preceding bits and ones, and the
 /// index of a child node in the parent's `entries` list
@@ -62,10 +67,17 @@ struct InternalNode {
         void remove();
     };
 
-    Entry entries[childCount];
+    /// The number of children this node has
+    unsigned long size;
+
+    /// An array of pointers to the child nodes
+    /// This is one more than the maximum, so that we can split nodes
+    /// after insertion instead of before
+    Entry entries[nodeSizeMax + 1];
 
     InternalNode() :
-            entries{Entry(), Entry()} {}
+            size(0),
+            entries{Entry()}{}
 
     InternalNode(TTree *left, TTree *right, TTree *parent = nullptr);
 
@@ -78,6 +90,16 @@ struct InternalNode {
     unsigned long bits();
 
     unsigned long ones();
+
+    Entry popFirst();
+
+    Entry popLast();
+
+    void insert(unsigned long, Entry);
+
+    void append(Entry);
+
+    void remove(unsigned long);
 };
 
 /** A leaf node, which consists of a bitvector (represented by vector<bool>) */
@@ -113,6 +135,8 @@ struct TTree {
         Node(TTree *, TTree *);
 
         explicit Node(bit_vector);
+
+        explicit Node(unsigned long);
     } node;
 
     TTree() :
@@ -132,12 +156,18 @@ struct TTree {
             isLeaf(true),
             node(std::move(bv)) {}
 
+    explicit TTree(unsigned long size) :
+        isLeaf(true),
+        node(size) {}
+
     /// The TTree destructor decides which variant of the union to destroy
     ~TTree();
 
     unsigned long depth();
 
     unsigned long height();
+
+    unsigned long size();
 
     Record findChild(unsigned long);
 
@@ -155,11 +185,37 @@ struct TTree {
 
     void updateCounters(long, long);
 
-    void split();
+    TTree *insertBits(long unsigned, long unsigned);
 
-    void insertBits(long unsigned, long unsigned);
+    TTree *deleteBits(long unsigned, long unsigned);
 
-    void deleteBits(long unsigned, long unsigned);
+    TTree *checkSizeUpper();
+
+    TTree *checkSizeLower();
+
+    bool trySpillInternal();
+
+    bool trySpillLeaf();
+
+    TTree *splitInternal();
+
+    TTree *splitLeaf();
+
+    bool tryStealInternal();
+
+    bool tryStealLeaf();
+
+    TTree *mergeInternal();
+
+    TTree *mergeLeaf();
+
+    void moveLeftInternal();
+
+    void moveRightInternal();
+
+    void moveLeftLeaf();
+
+    void moveRightLeaf();
 };
 
 #endif //UNTITLED_TTREE_H
