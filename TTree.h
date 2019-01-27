@@ -8,13 +8,13 @@
 #include "BitVector.h"
 #include <utility>
 
-// The three main parameters for the TTree and LTree representation
+/// The three main parameters for the TTree and LTree representation
 static const unsigned int k = 2; // The `k` in the k2-tree
 static const unsigned int block = k * k; // The number of bits in one block of the bit vector
 static const unsigned int B = 512; // The maximum size (in bits) of a leaf bitvector
 
-// The maximum/minimum number of children/blocks an internal node/leaf node
-// is allowed to have, as per the rules of the B+tree
+/// The maximum/minimum number of children/blocks an internal node/leaf node
+/// is allowed to have, as per the rules of the B+tree
 static const unsigned int nodeSizeMax = 31;
 static const unsigned int nodeSizeMin = (nodeSizeMax + 1) / 2;
 static const unsigned int leafSizeMax = B / block;
@@ -31,6 +31,11 @@ struct Record {
             b(b), o(o), i(i) {}
 };
 
+/// The three main structs forming the tree
+/// `TTree` represents one node in the tree, which contains a pointer to its
+/// parent (or nullptr for the root) and the index in the parent,
+/// as well as either an InternalNode containing entries (b, o, P) or a LeafNode
+/// containing a BitVector
 struct InternalNode;
 struct LeafNode;
 struct TTree;
@@ -48,8 +53,10 @@ struct InternalNode {
         Entry() :
                 b(0), o(0), P(nullptr) {}
 
-        explicit Entry(TTree *P);
+        explicit Entry(TTree *);
 
+        /// Construct Entry from the three fields
+        /// This method is not unused, but is used as an initialiser list
         Entry(unsigned long b, unsigned long o, TTree *P) :
                 b(b), o(o), P(P) {}
 
@@ -70,30 +77,68 @@ struct InternalNode {
     /// after insertion instead of before
     Entry entries[nodeSizeMax + 1];
 
+    /// The default constructor creates an empty internal node
     InternalNode() :
             size(0),
             entries{Entry()} {}
 
+    /**
+     * Creates a new internal node with the given two children
+     *
+     * @param left the first child of this node
+     * @param right the second child of this node
+     * @param parent the parent node, which has this as its internal node
+     *        the left and right TTrees have their parent and indexInParent
+     *        set correctly as well
+     */
     InternalNode(TTree *left, TTree *right, TTree *parent = nullptr);
 
+    /**
+     * When an internal node is dropped, clear the entries it points to
+     */
     ~InternalNode() {
         for (auto &entry : entries) {
             entry.remove();
         }
     }
 
+    /**
+     * Returns the total number of bits in this tree, by summing up the
+     * b-parts of the entries
+     */
     unsigned long bits();
 
+    /**
+     * Returns the total number of ones in this tree, by summing up the
+     * o-parts of the entries
+     */
     unsigned long ones();
 
+    /**
+     * Takes the leftmost entry out of this node and returns it
+     * @return
+     */
     Entry popFirst();
 
+    /**
+     * Takes the rightmost entry out of this node and returns it
+     * @return
+     */
     Entry popLast();
 
+    /**
+     * Adds the given entry to this node at the specified position
+     */
     void insert(unsigned long, Entry);
 
+    /**
+     * Adds the given entry to the end of this node
+     */
     void append(Entry);
 
+    /**
+     * Removes the entry at the specified position from this node
+     */
     void remove(unsigned long);
 };
 
@@ -101,16 +146,29 @@ struct InternalNode {
 struct LeafNode {
     BitVector bv;
 
-    /// Constructs a leaf with the given number of bits
+    /**
+     * Constructs a leaf with the given number of bits
+     */
     explicit LeafNode(unsigned long size) :
             bv(size) {}
 
-    /// Constructs a leaf node from the given bit vector
+    /**
+     * Constructs a leaf node from the given bit vector
+     * @param bv the bitvector to be moved into this leaf node
+     */
     explicit LeafNode(BitVector bv) :
             bv(std::move(bv)) {}
 
+    /**
+     * Get the total number of bits stored in this leaf node
+     * @return the size in bits of this leaf
+     */
     unsigned long bits();
 
+    /**
+     * Get the number of ones in this leaf node
+     * @return the number of bits in this leaf that are set to 1
+     */
     unsigned long ones();
 };
 
@@ -134,10 +192,18 @@ struct TTree {
         explicit Node(unsigned long);
     } node;
 
+    /**
+     * Constructs an empty leaf node
+     */
     TTree() :
             isLeaf(true),
             node() {}
 
+    /**
+     * Constructs a node with the two given `TTree`s as children
+     * @param left the first child of this node
+     * @param right the second child of this node
+     */
     TTree(TTree *left, TTree *right) :
             isLeaf(false),
             node(left, right) {
@@ -147,10 +213,18 @@ struct TTree {
         right->indexInParent = 1;
     }
 
+    /**
+     * Constructs a leaf node with the given bit vector
+     * @param bv the bit vector to be moved into this leaf node
+     */
     explicit TTree(BitVector bv) :
             isLeaf(true),
             node(std::move(bv)) {}
 
+    /**
+     * Constructs an all-zeros leaf node with the specified size
+     * @param size the size of this leaf node in bits
+     */
     explicit TTree(unsigned long size) :
             isLeaf(true),
             node(size) {}
@@ -172,6 +246,12 @@ struct TTree {
  */
     unsigned long height();
 
+    /**
+     * Gets the size of this node, either as the number of children (internal
+     * node) or in number of k^2 blocks (leaf node)
+     * @return the size of this node in number of children or bit blocks,
+     *         depending on the type of the node
+     */
     unsigned long size();
 
     /**
@@ -221,8 +301,16 @@ struct TTree {
  */
     bool setBit(unsigned long, bool);
 
+    /**
+     * Gets the total number of bits covered by this subtree
+     * @return the total number of bits in this node's subtree
+     */
     unsigned long bits();
 
+    /**
+     * Gets the total number of ones covered by this subtree
+     * @return the total number of 1-bits in this node's subtree
+     */
     unsigned long ones();
 
     /**
@@ -260,32 +348,119 @@ struct TTree {
  */
     TTree *deleteBits(long unsigned, long unsigned);
 
+private:
+    /**
+     * Checks if this node satisfies the maximum size for an internal node
+     * or leaf node. If not, tries to spill a node to a sibling, or if that
+     * fails will split this node into two and recursively check the parent
+     *
+     * @return nullptr in most cases, but returns the new root if it has
+     *         changed, e.g. if the height of the tree has increased
+     */
     TTree *checkSizeUpper();
 
+    /**
+     * Checks if this node satisfies the minimum size for an internal node
+     * or leaf node. If not, tries to steal a node from a sibling, or if that
+     * fails will merge this node with one of the siblings, and recursively
+     * check the parent
+     *
+     * @return nullptr in most cases, but returns the new root if it has
+     *         changed, e.g. if the height of the tree has decreased
+     */
     TTree *checkSizeLower();
 
+    /**
+     * Tries to move a child of an internal node to a sibling, and returns
+     * whether it succeeded
+     *
+     * @return true if a spill could be done, false if not (e.g. if both of
+     *         the nodes siblings are of maximum size)
+     */
     bool trySpillInternal();
 
+    /**
+     * Tries to move a child of an leaf node to a sibling, and returns
+     * whether it succeeded
+     *
+     * @return true if a spill could be done, false if not (e.g. if both of
+     *         the nodes siblings are of maximum size)
+     */
     bool trySpillLeaf();
 
+    /**
+     * Splits this node into two nodes of minimum size, and recursively
+     * checks the rest of the tree for meeting size requirements
+     *
+     * @return nullptr in most cases, but returns the new root if this operation
+     *         causes the tree's height to increase, which changes the root
+     */
     TTree *splitInternal();
 
+    /**
+     * Splits this node into two nodes of minimum size, and recursively
+     * checks the rest of the tree for meeting size requirements
+     *
+     * @return nullptr in most cases, but returns the new root if this operation
+     *         causes the tree's height to increase, which changes the root
+     */
     TTree *splitLeaf();
 
+    /**
+     * Tries to steal a node from one of this node's siblings, and returns true
+     * if it succeeds
+     *
+     * @return true if this operation could be done, false otherwise (e.g. if both
+     *         of this node's siblings are of minimum size)
+     */
     bool tryStealInternal();
 
+    /**
+     * Tries to steal a node from one of this node's siblings, and returns true
+     * if it succeeds
+     *
+     * @return true if this operation could be done, false otherwise (e.g. if both
+     *         of this node's siblings are of minimum size)
+     */
     bool tryStealLeaf();
 
+    /**
+     * Merges this node with a sibling, and recursively checks the rest of the
+     * tree for meeting size constraints
+     *
+     * @return nullptr usually, but returns the new root it it changed due to this
+     *         operation, e.g. when the height of the tree changed
+     */
     TTree *mergeInternal();
 
+    /**
+     * Merges this node with a sibling, and recursively checks the rest of the
+     * tree for meeting size constraints
+     *
+     * @return nullptr usually, but returns the new root it it changed due to this
+     *         operation, e.g. when the height of the tree changed
+     */
     TTree *mergeLeaf();
 
+    /**
+     * Moves a single child (the leftmost child) of this node to the end of the
+     * node's left sibling
+     */
     void moveLeftInternal();
 
+    /**
+     * Moves the rightmost child of this node to the start of the right sibling
+     */
     void moveRightInternal();
 
+    /**
+     * Moves the leftmost block of k^2 bits to the end of the left sibling
+     */
     void moveLeftLeaf();
 
+    /**
+     * Moves the rightmost block of k^2 bits to the start of the right sibling
+     */
     void moveRightLeaf();
 };
 

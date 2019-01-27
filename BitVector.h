@@ -48,6 +48,10 @@ struct BitVector {
  */
     unsigned long rank1(unsigned long n);
 
+    /**
+     * Returns the number of 1-bits in the interval [lo, hi), which is equal to
+     * rank1(hi) - rank1(lo)
+     */
     unsigned long rangeRank1(unsigned long lo, unsigned long hi);
 
     /**
@@ -57,8 +61,23 @@ struct BitVector {
  */
     void insert(unsigned long begin, unsigned long size);
 
+    /**
+     * Inserts the range [lo, hi) of the bit vector `from` into this bit vector
+     *
+     * @param begin the position in this bit vector to insert into
+     * @param from the bit vector to insert a range from
+     * @param lo the start of the range in `from` to insert
+     * @param hi the end of the range in `from` to insert
+     */
     void insert(unsigned long begin, const BitVector &from, unsigned long lo, unsigned long hi);
 
+    /**
+     * Appends the range [lo, hi) of the bit vector `from` into this bit vector
+     *
+     * @param from the bit vector to append bits from
+     * @param lo the start of the range of bits to append
+     * @param hi the end of the range of bits to append
+     */
     void append(const BitVector &from, unsigned long lo, unsigned long hi);
 
     /**
@@ -68,14 +87,30 @@ struct BitVector {
  */
     void erase(unsigned long begin, unsigned long size);
 
+    /**
+     * Gets the size (number of bits) of this bit vector
+     * @return
+     */
     unsigned long size() {
         return data.size();
     }
 
+    /**
+     * Construct an all-zeros bit vector with the given number of bits
+     *
+     * @param size the number of bits the constructed vector will contain
+     */
     explicit BitVector(unsigned long size) :
             data(size, false),
             block_counts((size + BLOCK_SIZE - 1) / BLOCK_SIZE, 0) {}
 
+    /**
+     * Constructs a bit vector from the range [lo, hi) of another bit vector
+     *
+     * @param from the bit vector to copy a range of bits from
+     * @param lo the start of the range of bits to take
+     * @param hi the end of the range of bits to take
+     */
     BitVector(const BitVector &from, unsigned long lo, unsigned long hi) :
             data(from.data.begin() + lo, from.data.begin() + hi),
             block_counts((hi - lo + BLOCK_SIZE - 1) / BLOCK_SIZE) {
