@@ -237,19 +237,14 @@ unsigned long LeafNode::ones() {
 InternalNode::Entry InternalNode::popFirst() {
     // Take the first entry out, move everything else left
     InternalNode::Entry result = this->entries[0];
-    for (unsigned long i = 1; i < this->size; i++) {
-        entries[i - 1] = entries[i];
-        entries[i - 1].P->indexInParent = i - 1;
-    }
-    size--;
-    entries[size] = Entry();
+    this->remove(0);
     return result;
 }
 
 InternalNode::Entry InternalNode::popLast() {
     // Take the last entry out
-    InternalNode::Entry result = entries[size - 1];
     size--;
+    InternalNode::Entry result = entries[size];
     entries[size] = Entry();
     return result;
 }
