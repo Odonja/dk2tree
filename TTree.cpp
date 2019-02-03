@@ -551,6 +551,8 @@ TTree *TTree::mergeInternal() {
         // Overwrite the pointer in the entry, so that it is not deleted
         node.internalNode->entries[0].P = nullptr;
         delete this;
+        child->parent = nullptr;
+        child->indexInParent = 0;
         return child;
     }
 
