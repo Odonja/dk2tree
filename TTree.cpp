@@ -595,8 +595,8 @@ TTree *TTree::mergeLeaf() {
     unsigned long idx = indexInParent;
     TTree *left = nullptr, *right = nullptr;
     if (idx > 0) {
-        left = parent->node.internalNode->entries[idx].P;
-        right= this;
+        left = parent->node.internalNode->entries[idx - 1].P;
+        right = this;
         idx--;
 //        printf("merging leaf left\n");
     } else {
