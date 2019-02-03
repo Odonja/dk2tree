@@ -272,10 +272,12 @@ void InternalNode::append(InternalNode::Entry entry) {
 }
 
 void InternalNode::remove(unsigned long idx) {
+    size--;
     for (unsigned long i = idx; i < size; i++) {
         entries[i] = entries[i + 1];
         entries[i].P->indexInParent = i;
     }
+    entries[size] = Entry();
 }
 
 TTree *TTree::checkSizeUpper() {
