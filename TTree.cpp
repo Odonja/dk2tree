@@ -473,7 +473,7 @@ void TTree::moveRightLeaf() {
     unsigned long d_b = block;
     unsigned long d_o = left.rangeRank1(lo, hi);
     right.insert(0, left, lo, hi);
-    left.erase(lo, hi);
+    left.erase(lo, hi - lo);
 
     // Update the parent's b and o counters
     parent->node.internalNode->entries[idx].b -= d_b;
