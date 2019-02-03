@@ -81,11 +81,11 @@ struct BitVector {
     void append(const BitVector &from, unsigned long lo, unsigned long hi);
 
     /**
-     * Deletes the indicated number of bits starting at the indicated index
-     * @param begin an index with 0 <= begin < size()
-     * @param size the number of bits to be deleted. Should satisfy begin + size <= size()
+     * Deletes the indicated range of bits starting at the indicated index
+     * @param lo an index with 0 <= lo <= size()
+     * @param hi the end of the range of bits to be deleted. Should satisfy lo <= hi <= size()
      */
-    void erase(unsigned long begin, unsigned long size);
+    void erase(unsigned long lo, unsigned long hi);
 
     /**
      * Gets the size (number of bits) of this bit vector

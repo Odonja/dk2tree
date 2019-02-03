@@ -70,16 +70,16 @@ void BitVector::append(const BitVector &from, unsigned long lo, unsigned long hi
     recompute(); // TODO: maybe do more efficient update if inserted is whole number of blocks
 }
 
-void BitVector::erase(unsigned long begin, unsigned long size) {
-    data.erase(data.begin() + begin, data.begin() + begin + size);
-    if (begin % BLOCK_SIZE == 0 && size % BLOCK_SIZE == 0) {
+void BitVector::erase(unsigned long lo, unsigned long hi) {
+    data.erase(data.begin() + lo, data.begin() + hi);
+    if (lo % BLOCK_SIZE == 0 && hi % BLOCK_SIZE == 0) {
         block_counts.erase(
-                block_counts.begin() + begin / BLOCK_SIZE,
-                block_counts.begin() + begin / BLOCK_SIZE + size / BLOCK_SIZE
+                block_counts.begin() + lo / BLOCK_SIZE,
+                block_counts.begin() + hi / BLOCK_SIZE
         );
     } else {
         block_counts.resize((data.size() + BLOCK_SIZE - 1) / BLOCK_SIZE, 0);
-        recompute(begin);
+        recompute(lo);
     }
 }
 

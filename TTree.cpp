@@ -153,7 +153,7 @@ TTree *TTree::deleteBits(long unsigned index, long unsigned count) {
     long unsigned start = index - entry.b;
     long unsigned end = start + count;
     long unsigned deletedOnes = bv.rangeRank1(start, end);
-    bv.erase(start, count);
+    bv.erase(start, end);
     leaf->updateCounters(-count, -deletedOnes);
     return leaf->checkSizeLower();
 }
@@ -473,7 +473,7 @@ void TTree::moveRightLeaf() {
     unsigned long d_b = block;
     unsigned long d_o = left.rangeRank1(lo, hi);
     right.insert(0, left, lo, hi);
-    left.erase(lo, hi - lo);
+    left.erase(lo, hi);
 
     // Update the parent's b and o counters
     parent->node.internalNode->entries[idx].b -= d_b;
@@ -525,7 +525,7 @@ TTree *TTree::splitLeaf() {
     mid -= mid % block;
     auto &left = this->node.leafNode->bv;
     auto right = BitVector(left, mid, n);
-    left.erase(mid, n - mid);
+    left.erase(mid, n);
     auto *newNode = new TTree(right);
     if (parent == nullptr) {
 //        printf("splitting leaf = root\n");

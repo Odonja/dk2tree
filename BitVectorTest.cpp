@@ -49,7 +49,7 @@ TEST(BitVectorTest, InsertDelete) {
     EXPECT_EQ(bv.rank1(100), 0);
     EXPECT_EQ(bv.rank1(101), 1);
 
-    bv.erase(75, 25);
+    bv.erase(75, 100);
     EXPECT_EQ(bv.size(), size - 25);
     EXPECT_TRUE(bv[75]);
     EXPECT_FALSE(bv[100]);
