@@ -324,6 +324,22 @@ struct TTree {
     void updateCounters(long, long);
 
     /**
+     * Inserts one block of k^2 bits at the specified position
+     *
+     * @return the new root if the tree's root changed, nullptr otherwise
+     */
+    TTree *insertBlock(long unsigned);
+
+    /**
+     * Deletes a block of k^2 bits at the specified position
+     *
+     * @return the new root if the tree's root changed, nullptr otherwise
+     */
+    TTree *deleteBlock(long unsigned);
+
+    // TODO: these two methods should be private, inserting/deleting \
+       should be done one block at a time
+    /**
      * Inserts the given number of bits (set to zero) at the given position in the tree
      *
      * @param index the position at which to insert bits

@@ -278,7 +278,7 @@ TEST(TTreeTest, BPlusTest0) {
     vector<bool> bv(n, false);
     // Fill up the tree
     for (unsigned long i = 0; i < n; i += block) {
-        auto result = root->insertBits(i, block);
+        auto result = root->insertBlock(i);
         if (result != nullptr) {
             root = result;
         }
@@ -305,7 +305,7 @@ TEST(TTreeTest, BPlusTest1) {
     vector<bool> ref(totalSize, false);
 
     for (unsigned long i = 0; i < 1024; i++) {
-        auto result = root->insertBits(i * block, block);
+        auto result = root->insertBlock(i * block);
         root = result != nullptr ? result : root;
         if (i % 17 == 0) {
             for (unsigned long j = 0; j < block; j++) {
@@ -322,7 +322,7 @@ TEST(TTreeTest, BPlusTest1) {
 
     // Delete everything again
     for (unsigned long i = 0; i < 1024; i++) {
-        auto result = root->deleteBits(0, block);
+        auto result = root->deleteBlock(0);
         root = result != nullptr ? result : root;
         ref.erase(ref.begin(), ref.begin() + block);
         ASSERT_TRUE(validate(root));
@@ -339,7 +339,7 @@ TEST(TTreeTest, BPlusTest2) {
     vector<bool> ref(totalSize, false);
 
     for (unsigned long i = 0; i < 1024; i++) {
-        auto result = root->insertBits(0, block);
+        auto result = root->insertBlock(0);
         root = result != nullptr ? result : root;
         if (i % 17 == 0) {
             for (unsigned long j = 0; j < block; j++) {
@@ -356,7 +356,7 @@ TEST(TTreeTest, BPlusTest2) {
 
     // Delete everything again
     for (unsigned long i = 1024; i > 0; i--) {
-        auto result = root->deleteBits(i * block - block, block);
+        auto result = root->deleteBlock((i - 1) * block);
         root = result != nullptr ? result : root;
         ref.erase(ref.end() - block, ref.end());
         ASSERT_TRUE(validate(root));

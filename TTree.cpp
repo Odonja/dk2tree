@@ -158,6 +158,14 @@ TTree *TTree::deleteBits(long unsigned index, long unsigned count) {
     return leaf->checkSizeLower();
 }
 
+TTree *TTree::insertBlock(long unsigned index) {
+    return this->insertBits(index, block);
+}
+
+TTree *TTree::deleteBlock(long unsigned index) {
+    return this->deleteBits(index, block);
+}
+
 unsigned long TTree::depth() {
     if (parent == nullptr) {
         return 0;
