@@ -2,8 +2,8 @@
 // Created by hugo on 2-1-19.
 //
 
-#ifndef UNTITLED_BITVECTOR_H
-#define UNTITLED_BITVECTOR_H
+#ifndef DK2TREE_BITVECTOR_H
+#define DK2TREE_BITVECTOR_H
 
 #include <vector>
 #include <cstdint>
@@ -127,4 +127,4 @@ private:
 };
 
 
-#endif //UNTITLED_BITVECTOR_H
+#endif //DK2TREE_BITVECTOR_H
