@@ -54,33 +54,29 @@ void InternalNode::Entry::remove() {
 }
 
 Record TTree::findChild(unsigned long n) {
-    if (this->isLeaf) {
-        return {0, 0, 0};
-    } else {
-        unsigned long bitsBefore = 0;
-        unsigned long onesBefore = 0;
+    unsigned long bitsBefore = 0;
+    unsigned long onesBefore = 0;
 
-        InternalNode *node = this->node.internalNode;
-        unsigned long i;
-        for (i = 0; i < node->size; i++) {
-            auto &entry = node->entries[i];
-            if (bitsBefore + entry.b > n) {
-                return {bitsBefore, onesBefore, i};
-            }
-            bitsBefore += entry.b;
-            onesBefore += entry.o;
+    InternalNode *node = this->node.internalNode;
+    unsigned long i;
+    for (i = 0; i < node->size; i++) {
+        auto &entry = node->entries[i];
+        if (bitsBefore + entry.b > n) {
+            return {bitsBefore, onesBefore, i};
         }
-        // If the required bit is one after the last bit in this tree,
-        // return the last child anyway
-        // This is necessary for appending bits
-        if (i == node->size && bitsBefore == n) {
-            auto &entry = node->entries[i - 1];
-            return {bitsBefore - entry.b, onesBefore - entry.o, i - 1};
-        }
+        bitsBefore += entry.b;
+        onesBefore += entry.o;
+    }
+    // If the required bit is one after the last bit in this tree,
+    // return the last child anyway
+    // This is necessary for appending bits
+    if (i == node->size && bitsBefore == n) {
+        auto &entry = node->entries[i - 1];
+        return {bitsBefore - entry.b, onesBefore - entry.o, i - 1};
     }
     // If we reach this point, that means that the size of this subtree is less than n
     // so the input parameter was out of range
-    // TODO throw exception or something
+    throw std::range_error("TTree: index out of range");
 }
 
 InternalNode::Entry TTree::findLeaf(unsigned long n) {
