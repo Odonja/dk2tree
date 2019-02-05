@@ -15,7 +15,7 @@ static const unsigned int B = 512; // The maximum size (in bits) of a leaf bitve
 
 /// The maximum/minimum number of children/blocks an internal node/leaf node
 /// is allowed to have, as per the rules of the B+tree
-static const unsigned int nodeSizeMax = 31;
+static const unsigned int nodeSizeMax = 3;
 static const unsigned int nodeSizeMin = (nodeSizeMax + 1) / 2;
 static const unsigned int leafSizeMax = B / block;
 static const unsigned int leafSizeMin = (leafSizeMax + 1) / 2;

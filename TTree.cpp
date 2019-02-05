@@ -581,7 +581,7 @@ TTree *TTree::mergeInternal() {
         right->node.internalNode->entries[i].P = nullptr;
         d_b += entry.b;
         d_o += entry.o;
-        entry.P->parent = right;
+        entry.P->parent = left;
         internalNode->append(entry);
     }
     // Delete the right child, and update the b and o counters for left
