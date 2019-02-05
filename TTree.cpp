@@ -304,9 +304,8 @@ TTree *TTree::checkSizeLower() {
         if (!tryStealInternal()) {
             return mergeInternal();
         }
-    } else {
-        return nullptr;
     }
+    return nullptr;
 }
 
 bool TTree::trySpillInternal() {
