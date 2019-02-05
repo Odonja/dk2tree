@@ -9,23 +9,27 @@
 // Constructors and destructors for data types that can't be in TTree.h
 TTree::Node::Node() {
     this->internalNode = nullptr;
-    this->leafNode = new LeafNode(B);
+    this->leafNode = new LeafNode(0);
 }
 
 TTree::Node::Node(TTree *P1, TTree *P2) {
     this->leafNode = nullptr;
-    this->internalNode = new InternalNode();
-    internalNode->entries[0] = InternalNode::Entry(P1);
-    internalNode->entries[1] = InternalNode::Entry(P2);
+    this->internalNode = new InternalNode(P1, P2);
 }
 
-TTree::Node::Node(bit_vector bv) {
+TTree::Node::Node(BitVector bv) {
     this->internalNode = nullptr;
     this->leafNode = new LeafNode(std::move(bv));
 }
 
+TTree::Node::Node(unsigned long size) {
+    this->internalNode = nullptr;
+    this->leafNode = new LeafNode(size);
+}
+
 InternalNode::InternalNode(TTree *left, TTree *right, TTree *parent) :
-        entries{Entry(left), Entry(right)} {
+        size(2),
+        entries{Entry(left), Entry(right), Entry()} {
     left->parent = parent;
     left->indexInParent = 0;
     right->parent = parent;
@@ -49,15 +53,6 @@ void InternalNode::Entry::remove() {
     delete P;
 }
 
-/**
- * Given an integer n, returns the child node containing the n-th bit in this subtree,
- *      as well as the numbers of bits and ones preceding it.
- * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
- * @return  a TTree::InternalNode::Entry with:
- *      b = number of bits preceding this node in the TTree
- *      o = number of ones preceding this node in the TTree
- *      i = the index of the relevant subtree in the `entries` of `this`
- */
 Record TTree::findChild(unsigned long n) {
     if (this->isLeaf) {
         return {0, 0, 0};
@@ -66,14 +61,21 @@ Record TTree::findChild(unsigned long n) {
         unsigned long onesBefore = 0;
 
         InternalNode *node = this->node.internalNode;
-        unsigned long i = 0;
-        for (const auto &entry : node->entries) {
+        unsigned long i;
+        for (i = 0; i < node->size; i++) {
+            auto &entry = node->entries[i];
             if (bitsBefore + entry.b > n) {
                 return {bitsBefore, onesBefore, i};
             }
             bitsBefore += entry.b;
             onesBefore += entry.o;
-            i += 1;
+        }
+        // If the required bit is one after the last bit in this tree,
+        // return the last child anyway
+        // This is necessary for appending bits
+        if (i == node->size && bitsBefore == n) {
+            auto &entry = node->entries[i - 1];
+            return {bitsBefore - entry.b, onesBefore - entry.o, i - 1};
         }
     }
     // If we reach this point, that means that the size of this subtree is less than n
@@ -81,17 +83,6 @@ Record TTree::findChild(unsigned long n) {
     // TODO throw exception or something
 }
 
-/**
- * Given an integer n, returns the leaf containing the n-th bit of the bitvector,
- *      as well as the numbers of bits and ones preceding this leaf node.
- * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
- * @return  a TTree::InternalNode::Entry with:
- *      b = number of bits preceding this node in the TTree
- *      o = number of ones preceding this node in the TTree
- *      P = a pointer to the leaf node containing the n-th bit
- * Note that P is strictly just a pointer to a `TTreeNode`, as defined by the `entry` struct
- * But the union is always of the `LeafNode` variant.
- */
 InternalNode::Entry TTree::findLeaf(unsigned long n) {
     auto *current = this;
     unsigned long bitsBefore = 0;
@@ -105,38 +96,21 @@ InternalNode::Entry TTree::findLeaf(unsigned long n) {
     return {bitsBefore, onesBefore, current};
 }
 
-/**
- * Performs the `rank` operation on the bitvector represented by this tree
- * @param n  an integer with 0 <= n < (numbers of bits in the tree)
- * @return the number of 1-bits in the tree up to position n
- */
 unsigned long TTree::rank1(unsigned long n) {
     auto entry = findLeaf(n);
     auto &bv = entry.P->node.leafNode->bv;
     return entry.o + bv.rank1(n - entry.b);
 }
 
-/**
- * Performs the `access` operation on this subtree
- * @param n the index of a bit in the `TTree`
- * @return the value of the `n`-th bit in the tree
- */
 bool TTree::access(unsigned long n) {
     auto entry = findLeaf(n);
     return entry.P->node.leafNode->bv[n - entry.b];
 }
 
-/**
- * Sets the bit at position n to the value of b
- * @param n the index of the bit to set
- * @param b the value to set the bit to
- * @return true if this bit changed, e.g.
- *      if the previous value of the bit was unequal to b
- */
 bool TTree::setBit(unsigned long n, bool b) {
     // Find the leaf node that contains this bit
     auto entry = findLeaf(n);
-    bit_vector &bv = entry.P->node.leafNode->bv;
+    BitVector &bv = entry.P->node.leafNode->bv;
     bool changed = bv.set(n - entry.b, b);
 
     if (changed) {
@@ -146,14 +120,6 @@ bool TTree::setBit(unsigned long n, bool b) {
     return changed;
 }
 
-/**
- * Changes the values of the counters `b` and `o` of all the nodes whose
- * subtree contains this node. Used to update these counters after modifying
- * the underlying bitvector, or the structure of the tree.
- *
- * @param dBits the change in the number of bits (e.g. 4 when 4 bits were inserted)
- * @param dOnes the change in the number of ones (e.g. 2 when 2 zeros were set to ones)
- */
 void TTree::updateCounters(long dBits, long dOnes) {
     TTree *current = this;
     // Go up in the tree until we reach the root
@@ -169,13 +135,7 @@ void TTree::updateCounters(long dBits, long dOnes) {
     }
 }
 
-/**
- * Inserts the given number of bits (set to zero) at the given position in the tree
- *
- * @param index the position at which to insert bits
- * @param count the number of bits to insert
- */
-void TTree::insertBits(long unsigned index, long unsigned count) {
+TTree *TTree::insertBits(long unsigned index, long unsigned count) {
     auto entry = findLeaf(index);
     auto leaf = entry.P;
     auto &bv = leaf->node.leafNode->bv;
@@ -183,59 +143,29 @@ void TTree::insertBits(long unsigned index, long unsigned count) {
     leaf->updateCounters(count, 0);
 
     // Split this node up into two if it exceeds the size limit
-    if (bv.size() > 2 * B) {
-        split();
-    }
+    return leaf->checkSizeUpper();
 }
 
-/**
- * Deletes the given number of bits in the subtree, assuming they are all in the
- * same leaf node. This will be the case if a group of k^2 bits are deleted
- *
- * @param index the position of the first bit to delete
- * @param count the number of bits to delete
- */
-void TTree::deleteBits(long unsigned index, long unsigned count) {
+TTree *TTree::deleteBits(long unsigned index, long unsigned count) {
     auto entry = findLeaf(index);
     auto leaf = entry.P;
     auto &bv = leaf->node.leafNode->bv;
     long unsigned start = index - entry.b;
     long unsigned end = start + count;
-    // TODO replace by faster rank over range (O(b - a) instead of O(b + a))
-    long unsigned deletedOnes = (bv.rank1(end) - bv.rank1(start));
-    bv.erase(start, count);
+    long unsigned deletedOnes = bv.rangeRank1(start, end);
+    bv.erase(start, end);
     leaf->updateCounters(-count, -deletedOnes);
+    return leaf->checkSizeLower();
 }
 
-/**
- * When called on a leaf node, splits the bits in this leaf up into two parts
- * of (almost) equal size and replaces itself with an internal node with two
- * children containing those two halves.
- */
-void TTree::split() {
-    if (!isLeaf) {
-        return;
-    }
-
-    auto &bv = this->node.leafNode->bv;
-    unsigned long size = bv.size();
-    unsigned long size2 = size / 2;
-    size2 -= size2 % (k * k);
-    unsigned long size1 = size - size2;
-
-    auto *leaf1 = new TTree(bit_vector(bv, 0, size1));
-    auto *leaf2 = new TTree(bit_vector(bv, size1, size));
-
-    delete this->node.leafNode;
-    this->isLeaf = false;
-    this->node.internalNode = new InternalNode(leaf1, leaf2, this);
+TTree *TTree::insertBlock(long unsigned index) {
+    return this->insertBits(index, block);
 }
 
-/**
- * Returns the depth of this node, which is the length of the path from this
- * node to the root
- * @return the depth of `this`
- */
+TTree *TTree::deleteBlock(long unsigned index) {
+    return this->deleteBits(index, block);
+}
+
 unsigned long TTree::depth() {
     if (parent == nullptr) {
         return 0;
@@ -244,11 +174,6 @@ unsigned long TTree::depth() {
     }
 }
 
-/**
- * Returns the height of this node, which is the length of the longest path from
- * this node to any leaf in its subtree.
- * @return the height of `this`
- */
 unsigned long TTree::height() {
     if (isLeaf) {
         return 0;
@@ -265,7 +190,14 @@ unsigned long TTree::height() {
     }
 }
 
-/// Methods for determining the number of bits and ones in a leaf or internal node
+unsigned long TTree::size() {
+    if (isLeaf) {
+        return node.leafNode->bits() / block;
+    } else {
+        return node.internalNode->size;
+    }
+}
+
 unsigned long TTree::bits() {
     if (isLeaf) {
         return node.leafNode->bits();
@@ -305,4 +237,385 @@ unsigned long LeafNode::bits() {
 unsigned long LeafNode::ones() {
     // Count all ones manually
     return bv.rank1(bv.size());
+}
+
+// All the methods related to maintaining the B+Tree structure when
+// inserting/deleting data
+
+InternalNode::Entry InternalNode::popFirst() {
+    // Take the first entry out, move everything else left
+    InternalNode::Entry result = this->entries[0];
+    this->remove(0);
+    return result;
+}
+
+InternalNode::Entry InternalNode::popLast() {
+    // Take the last entry out
+    size--;
+    InternalNode::Entry result = entries[size];
+    entries[size] = Entry();
+    return result;
+}
+
+void InternalNode::insert(unsigned long idx, InternalNode::Entry entry) {
+    // Move everything from idx onwards right
+    for (unsigned long i = size; i > idx; i--) {
+        entries[i] = entries[i - 1];
+        entries[i].P->indexInParent = i;
+    }
+    entries[idx] = entry;
+    entries[idx].P->indexInParent = idx;
+    size++;
+}
+
+void InternalNode::append(InternalNode::Entry entry) {
+    entry.P->indexInParent = size;
+    entries[size] = entry;
+    size++;
+}
+
+void InternalNode::remove(unsigned long idx) {
+    size--;
+    for (unsigned long i = idx; i < size; i++) {
+        entries[i] = entries[i + 1];
+        entries[i].P->indexInParent = i;
+    }
+    entries[size] = Entry();
+}
+
+TTree *TTree::checkSizeUpper() {
+    if (isLeaf && size() > leafSizeMax) {
+        if (!trySpillLeaf()) {
+            return splitLeaf();
+        }
+    } else if (!isLeaf && size() > nodeSizeMax) {
+        if (!trySpillInternal()) {
+            return splitInternal();
+        }
+    }
+    return nullptr;
+}
+
+TTree *TTree::checkSizeLower() {
+    bool isRoot = (parent == nullptr);
+    if (isRoot && (size() >= 2 || isLeaf)) {
+        return nullptr;
+    } else if (isLeaf && size() < leafSizeMin) {
+        if (!tryStealLeaf()) {
+            return mergeLeaf();
+        }
+    } else if (!isLeaf && size() < nodeSizeMin) {
+        if (!tryStealInternal()) {
+            return mergeInternal();
+        }
+    } else {
+        return nullptr;
+    }
+}
+
+bool TTree::trySpillInternal() {
+    if (parent == nullptr) {
+//        printf("cant spill internal node at root\n");
+        return false;
+    }
+    unsigned long idx = indexInParent;
+    unsigned long n = parent->size();
+    auto &entries = parent->node.internalNode->entries;
+    if (idx > 0 && entries[idx - 1].P->size() < nodeSizeMax) {
+//        printf("spilling internal node left\n");
+        this->moveLeftInternal();
+        return true;
+    } else if (idx + 1 < n && entries[idx + 1].P->size() < nodeSizeMax) {
+//        printf("spilling internal node right\n");
+        this->moveRightInternal();
+        return true;
+    } else {
+//        printf("could not spill internal node\n");
+        return false;
+    }
+}
+
+bool TTree::tryStealInternal() {
+    if (parent == nullptr) {
+//        printf("cant steal internal node at root\n");
+        return false;
+    }
+    unsigned long idx = indexInParent;
+    unsigned long n = parent->size();
+    auto &entries = parent->node.internalNode->entries;
+    if (idx > 0 && entries[idx - 1].P->size() > nodeSizeMin) {
+//        printf("stealing internal node left\n");
+        entries[idx - 1].P->moveRightInternal();
+        return true;
+    } else if (idx + 1 < n && entries[idx + 1].P->size() > nodeSizeMin) {
+//        printf("stealing internal node right\n");
+        entries[idx + 1].P->moveLeftInternal();
+        return true;
+    } else {
+//        printf("could not steal internal node\n");
+        return false;
+    }
+}
+
+bool TTree::trySpillLeaf() {
+    if (parent == nullptr) {
+//        printf("cant spill leaf at root\n");
+        return false;
+    }
+    unsigned long idx = indexInParent;
+    unsigned long n = parent->size();
+    auto &entries = parent->node.internalNode->entries;
+    if (idx > 0 && entries[idx - 1].P->size() < leafSizeMax) {
+//        printf("spilling leaf left\n");
+        this->moveLeftLeaf();
+        return true;
+    } else if (idx + 1 < n && entries[idx + 1].P->size() < leafSizeMax) {
+//        printf("spilling leaf right\n");
+        this->moveRightLeaf();
+        return true;
+    } else {
+//        printf("could not spill leaf\n");
+        return false;
+    }
+}
+
+bool TTree::tryStealLeaf() {
+    if (parent == nullptr) {
+//        printf("cant steal leaf at root\n");
+        return false;
+    }
+    unsigned long idx = indexInParent;
+    unsigned long n = parent->size();
+    auto &entries = parent->node.internalNode->entries;
+    if (idx > 0 && entries[idx - 1].P->size() > leafSizeMin) {
+//        printf("stealing leaf from left\n");
+        entries[idx - 1].P->moveRightLeaf();
+        return true;
+    } else if (idx + 1 < n && entries[idx + 1].P->size() > leafSizeMin) {
+//        printf("stealing leaf from right\n");
+        entries[idx + 1].P->moveLeftLeaf();
+        return true;
+    } else {
+//        printf("could not steal leaf\n");
+        return false;
+    }
+}
+
+void TTree::moveLeftInternal() {
+//    printf("moving internal node left\n");
+    TTree *parent = this->parent;
+    unsigned long idx = this->indexInParent;
+    TTree *sibling = parent->node.internalNode->entries[idx - 1].P;
+
+    // Move the first child of `this` to the end of the left sibling
+    InternalNode::Entry toMove = this->node.internalNode->popFirst();
+    unsigned long d_b = toMove.b;
+    unsigned long d_o = toMove.o;
+    toMove.P->parent = sibling;
+    sibling->node.internalNode->append(toMove);
+
+    // Finally, update the parent's b and o counters for `this` and `sibling`
+    // The number of bits/ones in `toMove` is subtracted from `this`, but added to `sibling`
+    parent->node.internalNode->entries[idx].b -= d_b;
+    parent->node.internalNode->entries[idx].o -= d_o;
+
+    parent->node.internalNode->entries[idx - 1].b += d_b;
+    parent->node.internalNode->entries[idx - 1].o += d_o;
+}
+
+void TTree::moveRightInternal() {
+//    printf("moving internal node right\n");
+    unsigned long idx = this->indexInParent;
+    TTree *sibling = parent->node.internalNode->entries[idx + 1].P;
+
+    // Move the last child of `this` to the start of the left sibling
+    InternalNode::Entry toMove = this->node.internalNode->popLast();
+    unsigned long d_b = toMove.b;
+    unsigned long d_o = toMove.o;
+    toMove.P->parent = sibling;
+    sibling->node.internalNode->insert(0, toMove);
+
+    // Finally, update the parent's b and o counters for `this` and `sibling`
+    // The number of bits/ones in `toMove` is subtracted from `this`, but added to `sibling`
+    parent->node.internalNode->entries[idx].b -= d_b;
+    parent->node.internalNode->entries[idx].o -= d_o;
+
+    parent->node.internalNode->entries[idx + 1].b += d_b;
+    parent->node.internalNode->entries[idx + 1].o += d_o;
+}
+
+void TTree::moveLeftLeaf() {
+//    printf("moving leaf left\n");
+    unsigned long idx = indexInParent;
+    TTree *sibling = parent->node.internalNode->entries[idx - 1].P;
+    // Take the first k*k block of `this`, and append it to `sibling`
+    BitVector &right = node.leafNode->bv;
+    BitVector &left = sibling->node.leafNode->bv;
+    unsigned long d_b = block;
+    unsigned long d_o = right.rank1(block);
+    left.append(right, 0, block);
+    right.erase(0, block);
+
+    // Update the parent's b and o counters
+    parent->node.internalNode->entries[idx].b -= d_b;
+    parent->node.internalNode->entries[idx].o -= d_o;
+
+    parent->node.internalNode->entries[idx - 1].b += d_b;
+    parent->node.internalNode->entries[idx - 1].o += d_o;
+}
+
+void TTree::moveRightLeaf() {
+//    printf("moving leaf right\n");
+    unsigned long idx = indexInParent;
+    TTree *sibling = parent->node.internalNode->entries[idx + 1].P;
+    // Take the first k*k block of `this`, and append it to `sibling`
+    BitVector &left = node.leafNode->bv;
+    BitVector &right = sibling->node.leafNode->bv;
+    unsigned long hi = left.size();
+    unsigned long lo = hi - block;
+    unsigned long d_b = block;
+    unsigned long d_o = left.rangeRank1(lo, hi);
+    right.insert(0, left, lo, hi);
+    left.erase(lo, hi);
+
+    // Update the parent's b and o counters
+    parent->node.internalNode->entries[idx].b -= d_b;
+    parent->node.internalNode->entries[idx].o -= d_o;
+
+    parent->node.internalNode->entries[idx + 1].b += d_b;
+    parent->node.internalNode->entries[idx + 1].o += d_o;
+}
+
+TTree *TTree::splitInternal() {
+    auto &entries = this->node.internalNode->entries;
+    unsigned long n = this->size();
+    unsigned long mid = n / 2;
+    auto newNode = new TTree();
+    newNode->parent = parent;
+    newNode->isLeaf = false;
+    newNode->node.leafNode = nullptr;
+    newNode->node.internalNode = new InternalNode();
+    unsigned long d_b = 0, d_o = 0; // Count bits/ones in right half
+    for (unsigned long i = mid; i < n; i++) {
+        auto entry = entries[i];
+        if (entry.P != nullptr) {
+            entry.P->parent = newNode;
+            entry.P->indexInParent = i - mid;
+            d_b += entry.b;
+            d_o += entry.o;
+        }
+        newNode->node.internalNode->entries[i - mid] = entry;
+        entries[i] = InternalNode::Entry();
+    }
+    newNode->node.internalNode->size = n - mid;
+    node.internalNode->size = mid;
+    if (parent == nullptr) {
+//        printf("splitting internal node = root\n");
+        auto *newRoot = new TTree(this, newNode);
+        return newRoot;
+    } else {
+//        printf("splitting internal node != root\n");
+        parent->node.internalNode->entries[indexInParent].b -= d_b;
+        parent->node.internalNode->entries[indexInParent].o -= d_o;
+        parent->node.internalNode->insert(indexInParent + 1, InternalNode::Entry(newNode));
+        return parent->checkSizeUpper();
+    }
+}
+
+TTree *TTree::splitLeaf() {
+    unsigned long n = this->node.leafNode->bits();
+    unsigned long mid = n / 2;
+    mid -= mid % block;
+    auto &left = this->node.leafNode->bv;
+    auto right = BitVector(left, mid, n);
+    left.erase(mid, n);
+    auto *newNode = new TTree(right);
+    if (parent == nullptr) {
+//        printf("splitting leaf = root\n");
+        auto *newRoot = new TTree(this, newNode);
+        return newRoot;
+    } else {
+//        printf("splitting leaf != root\n");
+        unsigned long idx = indexInParent;
+        newNode->parent = parent;
+        InternalNode::Entry entry(newNode);
+        parent->node.internalNode->insert(indexInParent + 1, entry);
+        parent->node.internalNode->entries[idx].b -= entry.b;
+        parent->node.internalNode->entries[idx].o -= entry.o;
+        return parent->checkSizeUpper();
+    }
+}
+
+TTree *TTree::mergeInternal() {
+    // If we are the root and we are too small, then we have only one child
+    if (parent == nullptr) {
+        // Delete this, our only child should become the root
+        TTree *child = node.internalNode->entries[0].P;
+        // Overwrite the pointer in the entry, so that it is not deleted
+        node.internalNode->entries[0].P = nullptr;
+        delete this;
+        child->parent = nullptr;
+        child->indexInParent = 0;
+        return child;
+    }
+
+    unsigned long idx = indexInParent;
+    TTree *left = nullptr, *right = nullptr;
+    if (idx > 0) {
+        left = parent->node.internalNode->entries[idx - 1].P;
+        right = this;
+        idx--;
+//        printf("merging internal node left\n");
+    } else {
+        left = this;
+        right = parent->node.internalNode->entries[idx + 1].P;
+//        printf("merging internal node right\n");
+    }
+
+    // Merge `left` and `right` into one node
+    auto &internalNode = left->node.internalNode;
+    unsigned long n = right->size();
+    unsigned long d_b = 0, d_o = 0;
+    for (unsigned i = 0; i < n; i++) {
+        auto entry = right->node.internalNode->entries[i];
+        right->node.internalNode->entries[i].P = nullptr;
+        d_b += entry.b;
+        d_o += entry.o;
+        entry.P->parent = left;
+        internalNode->append(entry);
+    }
+    // Delete the right child, and update the b and o counters for left
+    parent->node.internalNode->remove(idx + 1);
+    parent->node.internalNode->entries[idx].b += d_b;
+    parent->node.internalNode->entries[idx].o += d_o;
+    return parent->checkSizeLower();
+}
+
+TTree *TTree::mergeLeaf() {
+    if (parent == nullptr) {
+        return nullptr;
+    }
+    unsigned long idx = indexInParent;
+    TTree *left = nullptr, *right = nullptr;
+    if (idx > 0) {
+        left = parent->node.internalNode->entries[idx - 1].P;
+        right = this;
+        idx--;
+//        printf("merging leaf left\n");
+    } else {
+        left = this;
+        right = parent->node.internalNode->entries[idx + 1].P;
+//        printf("merging leaf right\n");
+    }
+    auto &leftBits = left->node.leafNode->bv;
+    auto &rightBits = right->node.leafNode->bv;
+    // Append `right`s bits to `left`
+    leftBits.append(rightBits, 0, rightBits.size());
+    // Update the b and o for `left`, and delete `right`
+    unsigned long d_b = parent->node.internalNode->entries[idx + 1].b;
+    unsigned long d_o = parent->node.internalNode->entries[idx + 1].o;
+    parent->node.internalNode->entries[idx].b += d_b;
+    parent->node.internalNode->entries[idx].o += d_o;
+    parent->node.internalNode->remove(idx + 1);
+    return parent->checkSizeLower();
 }
