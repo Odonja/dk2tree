@@ -32,6 +32,17 @@ void print(TTree *tree, unsigned long depth = 0) {
     }
 }
 
+/**
+ * Checks that the tree given by `tree` is a valid tree, meaning for internal nodes:
+ *   - The `size` is equal to the number of non-null entries
+ *   - Each entry's b- and o-counters equal the number of bits/ones in that subtree
+ *   - Each entry's subtree has correct `parent` and `indexInParent`
+ * @param tree the tree to be validated
+ * @return true if and only if the above criteria are met
+ * Note that the use of EXPECT_* from Googletest is coupled with lots of `if (...) return false`
+ * This is because ASSERT_* statements only exit the current function when failed, which is not useful for
+ * recursive methods
+ */
 bool validate(TTree *tree) {
     if (tree->isLeaf) {
         return true;
@@ -72,6 +83,11 @@ bool validate(TTree *tree) {
     }
 }
 
+/**
+ * Checks that the tree given by `tree` is a valid B+ tree, meaning that each node satisfies the relevant size constraints
+ *
+ * @param tree the tree to validate the node sizes of
+ */
 bool validateSize(TTree *tree) {
     if (tree == nullptr) {
         return true;
@@ -118,6 +134,65 @@ bool validateSize(TTree *tree) {
         }
     }
     return true;
+}
+
+/**
+ * Compares a TTree against a vector<bool>, to check if the two contain the same data and that the tree's access() and
+ * rank1() operations are correct regarding the data it contains
+ */
+bool treeEqualsVec(TTree *root, vector<bool> bv, unsigned long lo = 0, unsigned long hi = ~0UL) {
+    unsigned long n1 = root->bits();
+    if (hi == ~0) {
+        hi = bv.size();
+    }
+    unsigned long n2 = hi - lo;
+    EXPECT_EQ(n1, n2);
+    if (n1 != n2) {
+        return false;
+    }
+
+    // EXPECT that the access() and rank() operations are the same
+    // in the TTree as in the reference vector
+    unsigned long rank = 0;
+    for (unsigned long i = 0; i < n1; i++) {
+        bool b1 = root->access(i);
+        bool b2 = bv[i + lo];
+        EXPECT_EQ(b1, b2);
+        if (b1 != b2) {
+            return false;
+        }
+        unsigned long r1 = root->rank1(i);
+        EXPECT_EQ(r1, rank);
+        if (r1 != rank) {
+            return false;
+        }
+        if (bv[i + lo]) {
+            rank += 1;
+        }
+    }
+    unsigned long r1 = root->rank1(n1);
+    EXPECT_EQ(r1, rank);
+    return r1 == rank;
+}
+
+/**
+ * Inserts a block into the tree and updates the `root` variable automatically
+ */
+void insertBlock(TTree **root, unsigned long position) {
+    auto result = (*root)->insertBlock(position);
+    if (result != nullptr) {
+        *root = result;
+    }
+}
+
+/**
+ * Deletes a block from the tree and updates the `root` variable automatically
+ */
+void deleteBlock(TTree **root, unsigned long position) {
+    auto result = (*root)->deleteBlock(position);
+    if (result != nullptr) {
+        *root = result;
+    }
 }
 
 TEST(TTreeTest, AccessSetBit) {
@@ -186,37 +261,6 @@ TEST(TTreeTest, AccessSetBit2) {
     }
 }
 
-bool treeEqualsVec(TTree *root, vector<bool> bv) {
-    unsigned long n1 = root->bits();
-    unsigned long n2 = bv.size();
-    EXPECT_EQ(n1, n2);
-    if (n1 != n2) {
-        return false;
-    }
-    // EXPECT that the access() and rank() operations are the same
-    // in the TTree as in the reference vector
-    unsigned long rank = 0;
-    for (unsigned long i = 0; i < n1; i++) {
-        bool b1 = root->access(i);
-        bool b2 = bv[i];
-        EXPECT_EQ(b1, b2);
-        if (b1 != b2) {
-            return false;
-        }
-        unsigned long r1 = root->rank1(i);
-        EXPECT_EQ(r1, rank);
-        if (r1 != rank) {
-            return false;
-        }
-        if (bv[i]) {
-            rank += 1;
-        }
-    }
-    unsigned long r1 = root->rank1(n1);
-    EXPECT_EQ(r1, rank);
-    return r1 == rank;
-}
-
 /**
  * Tests the insert() and delete() functions
  */
@@ -278,10 +322,7 @@ TEST(TTreeTest, BPlusTest0) {
     vector<bool> bv(n, false);
     // Fill up the tree
     for (unsigned long i = 0; i < n; i += block) {
-        auto result = root->insertBlock(i);
-        if (result != nullptr) {
-            root = result;
-        }
+        insertBlock(&root, i);
         ASSERT_TRUE(validate(root));
         ASSERT_TRUE(validateSize(root));
     }
@@ -300,13 +341,15 @@ TEST(TTreeTest, BPlusTest0) {
 TEST(TTreeTest, BPlusTest1) {
     // Insert blocks at the end, then remove from the front
     // All the while, the tree and bit vector should remain equal
-    unsigned long totalSize = block * 1024;
+    unsigned long numBlocks = 1024;
+    unsigned long checkInterval = 32;
+    unsigned long totalSize = block * numBlocks;
     auto *root = new TTree();
     vector<bool> ref(totalSize, false);
+    unsigned long lo = 0, hi = 0;
 
-    for (unsigned long i = 0; i < 1024; i++) {
-        auto result = root->insertBlock(i * block);
-        root = result != nullptr ? result : root;
+    for (unsigned long i = 0; i < numBlocks; i++) {
+        insertBlock(&root, i * block);
         if (i % 17 == 0) {
             for (unsigned long j = 0; j < block; j++) {
                 bool changed = root->setBit(i * block + j, true);
@@ -314,54 +357,115 @@ TEST(TTreeTest, BPlusTest1) {
                 ref[i * block + j] = true;
             }
         }
-        ASSERT_TRUE(validate(root));
-        ASSERT_TRUE(validateSize(root));
+        hi += block;
+        if ((i + 1) % checkInterval == 0) {
+            ASSERT_TRUE(validate(root));
+            ASSERT_TRUE(validateSize(root));
+            ASSERT_TRUE(treeEqualsVec(root, ref, lo, hi));
+        }
     }
 
     ASSERT_TRUE(treeEqualsVec(root, ref));
 
     // Delete everything again
-    for (unsigned long i = 0; i < 1024; i++) {
-        auto result = root->deleteBlock(0);
-        root = result != nullptr ? result : root;
-        ref.erase(ref.begin(), ref.begin() + block);
-        ASSERT_TRUE(validate(root));
-        ASSERT_TRUE(validateSize(root));
-        ASSERT_TRUE(treeEqualsVec(root, ref));
+    for (unsigned long i = 0; i < numBlocks; i++) {
+        deleteBlock(&root, 0);
+        lo += block;
+        if ((i + 1) % checkInterval == 0) {
+            ASSERT_TRUE(validate(root));
+            ASSERT_TRUE(validateSize(root));
+            ASSERT_TRUE(treeEqualsVec(root, ref, lo, hi));
+        }
     }
 }
 
 TEST(TTreeTest, BPlusTest2) {
-    // Insert blocks at the start, then remove frmo the end
+    // Insert blocks at the start, then remove from the end
     // All the while, the tree and bit vector should remain equal
-    unsigned long totalSize = block * 1024;
+    unsigned long numBlocks = 1024;
+    unsigned long checkInterval = 32;
+    unsigned long totalSize = block * numBlocks;
     auto *root = new TTree();
     vector<bool> ref(totalSize, false);
+    unsigned long lo = totalSize, hi = totalSize;
 
-    for (unsigned long i = 0; i < 1024; i++) {
-        auto result = root->insertBlock(0);
-        root = result != nullptr ? result : root;
+    for (unsigned long i = 0; i < numBlocks; i++) {
+        insertBlock(&root, 0);
         if (i % 17 == 0) {
             for (unsigned long j = 0; j < block; j++) {
                 bool changed = root->setBit(j, true);
                 ASSERT_TRUE(changed);
-                ref[(1023 - i) * block + j] = true;
+                ref[(numBlocks - 1 - i) * block + j] = true;
             }
         }
-        ASSERT_TRUE(validate(root));
-        ASSERT_TRUE(validateSize(root));
+        lo -= block;
+        if ((i + 1) % checkInterval == 0) {
+            ASSERT_TRUE(validate(root));
+            ASSERT_TRUE(validateSize(root));
+            ASSERT_TRUE(treeEqualsVec(root, ref, lo, hi));
+        }
     }
 
     ASSERT_TRUE(treeEqualsVec(root, ref));
 
     // Delete everything again
-    for (unsigned long i = 1024; i > 0; i--) {
-        auto result = root->deleteBlock((i - 1) * block);
-        root = result != nullptr ? result : root;
-        ref.erase(ref.end() - block, ref.end());
-        ASSERT_TRUE(validate(root));
-        ASSERT_TRUE(validateSize(root));
-        ASSERT_TRUE(treeEqualsVec(root, ref));
+    for (unsigned long i = numBlocks; i > 0; i--) {
+        deleteBlock(&root, (i - 1) * block);
+        hi -= block;
+        if ((i - 1) % checkInterval) {
+            ASSERT_TRUE(validate(root));
+            ASSERT_TRUE(validateSize(root));
+            ASSERT_TRUE(treeEqualsVec(root, ref, lo, hi));
+        }
+    }
+}
+
+TEST(TTreeTest, BPlusTest3) {
+    // 1. Create `n` leaves worth of ones
+    // 2. Insert empty blocks in between all of them
+    // 3. Delete the ones
+    unsigned long n = 4;
+    unsigned long numBlocks = n * leafSizeMax;
+    auto root = new TTree();
+    for (unsigned long i = 0; i < numBlocks; i++) {
+        insertBlock(&root, 0);
+        for (unsigned long j = 0; j < block; j++) {
+            root->setBit(j, true);
+        }
+    }
+    // tree = 1111...1111
+
+    // Make sure that the tree consists of the correct number of ones
+    unsigned long len = numBlocks * block;
+    ASSERT_EQ(root->bits(), len);
+    for (unsigned long i = 0; i < len; i++) {
+        ASSERT_TRUE(root->access(i));
+        ASSERT_EQ(root->rank1(i), i);
+    }
+    ASSERT_EQ(root->rank1(len), len);
+
+    for (unsigned long i = 0; i < numBlocks; i++) {
+        insertBlock(&root, 2 * i * block);
+    }
+    // *tree = 000011110000...00001111
+
+    // Create the reference vector and test it against the tree
+    vector<bool> ref(2 * len);
+    for (unsigned long i = block; i < 2 * len; i += 2 * block) {
+        for (unsigned long j = 0; j < block; j++) {
+            ref[i + j] = true;
+        }
+    }
+    ASSERT_TRUE(treeEqualsVec(root, ref));
+
+    for (unsigned long i = block; i <= len; i += block) {
+        deleteBlock(&root, i);
+    }
+
+    ASSERT_EQ(root->bits(), len);
+    for (unsigned long i = 0; i < len; i++) {
+        ASSERT_FALSE(root->access(i));
+        ASSERT_EQ(root->rank1(i), 0);
     }
 }
 
