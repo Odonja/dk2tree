@@ -191,6 +191,39 @@ namespace {
         ASSERT_TRUE(centerBottomRight);
     }
 
+    TEST(DKTreeTest, addAndDeleteLeftCornerEdge) {
+        std::cout << "find edge test\n";
+        DKTree dktree;
+        unsigned long positionA = 0;
+        dktree.insertEntry();
+        dktree.addEdge(positionA, positionA);
+        dktree.removeEdge(positionA, positionA);
+        dktree.printtt();
+        bool topLeft = dktree.reportEdge(positionA, positionA);
+        ASSERT_FALSE(topLeft);
+    }
+
+    TEST(DKTreeTest, addAndDeleteLeftmiddleEdgeOthersStayTrue) {
+        std::cout << "find edge test\n";
+        DKTree dktree;
+        unsigned long positionA = 0;
+        unsigned long positionB = 8;
+        for(unsigned long i = 0; i < 16; i++){
+            dktree.insertEntry();
+            dktree.addEdge(positionA, i);
+        }
+        dktree.removeEdge(positionA, positionB);
+        dktree.printtt();
+        for(unsigned long i = 0; i < 16; i++){
+            bool current = dktree.reportEdge(positionA, i);
+            if(i == 8){
+                ASSERT_FALSE(current);
+            }else{
+                ASSERT_TRUE(current);
+            }
+        }
+    }
+
 
 
 }

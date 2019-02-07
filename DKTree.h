@@ -18,11 +18,12 @@ private:
     std::vector<unsigned long> freeColumns;
     unsigned long firstFreeColumn;
     unsigned long matrixSize;
-    static constexpr unsigned long k =2;
+    static constexpr unsigned long k = 2;
 
 public:
 
     DKTree();
+
     ~DKTree();
 
     /**
@@ -74,19 +75,37 @@ public:
 
     void printtt();
 
-    DKTree(const DKTree&) = delete; // not allowed to use the copy constructor
+    DKTree(const DKTree &) = delete; // not allowed to use the copy constructor
 
 private:
-    void printtree(TTree *tree, unsigned long depth=0);
+    void printtree(TTree *tree, unsigned long depth = 0);
+
     unsigned long calculateOffset(unsigned long row, unsigned long column, unsigned long iteration);
+
     void increaseMatrixSize();
+
     void checkArgument(unsigned long a, std::string functionName);
+
     void insertBlockTtree(unsigned long position);
+
     void insertBlockLtree(unsigned long position);
 
+    void deleteBlockTtree(unsigned long position);
+
+    void deleteBlockLtree(unsigned long position);
+
+    bool
+    deleteThisEdge(unsigned long row, unsigned long column, unsigned long iteration, unsigned long positionOfFirst);
+
     void
-    traverseToFirst0OrEndOfTTree(unsigned long row, unsigned long column, unsigned long &iteration, unsigned long &position,
+    traverseToFirst0OrEndOfTTree(unsigned long row, unsigned long column, unsigned long &iteration,
+                                 unsigned long &position,
                                  bool &centry);
+
+    bool deleteLTreeEdge(unsigned long positionOfFirst, unsigned long offset) const;
+
+    bool deleteTTreeEdge(unsigned long row,  unsigned long column,  unsigned long iteration,
+                          unsigned long positionOfFirst, unsigned long offset);
 };
 
 
