@@ -115,5 +115,83 @@ namespace {
         ASSERT_FALSE(resultAtoB);
     }
 
+    TEST(DKTreeTest, findOuterCorners) {
+        std::cout << "find edge test\n";
+        DKTree dktree;
+        unsigned long positionA = 0;
+        unsigned long positionB = 15;
+        for(unsigned long i = 0; i < 16; i++){
+            dktree.insertEntry();
+        }
+        dktree.addEdge(positionA, positionA);
+        dktree.addEdge(positionA, positionB);
+        dktree.addEdge(positionB, positionA);
+        dktree.addEdge(positionB, positionB);
+
+        dktree.printtt();
+        bool topLeft = dktree.reportEdge(positionA, positionA);
+        bool topRight = dktree.reportEdge(positionA, positionB);
+        bool bottomLeft = dktree.reportEdge(positionB, positionA);
+        bool bottomRight = dktree.reportEdge(positionB, positionA);
+        ASSERT_TRUE(topLeft);
+        ASSERT_TRUE(topRight);
+        ASSERT_TRUE(bottomLeft);
+        ASSERT_TRUE(bottomRight);
+    }
+
+    TEST(DKTreeTest, findCenter) {
+        std::cout << "find edge test\n";
+        DKTree dktree;
+        unsigned long positionA = 7;
+        unsigned long positionB = 8;
+        for(unsigned long i = 0; i < 16; i++){
+            dktree.insertEntry();
+        }
+        dktree.addEdge(positionA, positionA);
+        dktree.addEdge(positionA, positionB);
+        dktree.addEdge(positionB, positionA);
+        dktree.addEdge(positionB, positionB);
+
+        dktree.printtt();
+        bool centerTopLeft = dktree.reportEdge(positionA, positionA);
+        bool centerTopRight = dktree.reportEdge(positionA, positionB);
+        bool centerBottomLeft = dktree.reportEdge(positionB, positionA);
+        bool centerBottomRight = dktree.reportEdge(positionB, positionA);
+        ASSERT_TRUE(centerTopLeft);
+        ASSERT_TRUE(centerTopRight);
+        ASSERT_TRUE(centerBottomLeft);
+        ASSERT_TRUE(centerBottomRight);
+    }
+
+    TEST(DKTreeTest, increaseTableSizeAfterAddingAnEdge) {
+        std::cout << "find edge test\n";
+        DKTree dktree;
+        unsigned long positionA = 0;
+        unsigned long positionB = 31;
+        for(unsigned long i = 0; i < 16; i++){
+            dktree.insertEntry();
+        }
+        dktree.addEdge(positionA, positionA);
+        for(unsigned long i = 0; i < 16; i++){
+            dktree.insertEntry();
+        }
+
+        dktree.addEdge(positionA, positionB);
+        dktree.addEdge(positionB, positionA);
+        dktree.addEdge(positionB, positionB);
+
+        dktree.printtt();
+        bool centerTopLeft = dktree.reportEdge(positionA, positionA);
+        bool centerTopRight = dktree.reportEdge(positionA, positionB);
+        bool centerBottomLeft = dktree.reportEdge(positionB, positionA);
+        bool centerBottomRight = dktree.reportEdge(positionB, positionA);
+        ASSERT_TRUE(centerTopLeft);
+        ASSERT_TRUE(centerTopRight);
+        ASSERT_TRUE(centerBottomLeft);
+        ASSERT_TRUE(centerBottomRight);
+    }
+
+
+
 }
 #pragma clang diagnostic pop
