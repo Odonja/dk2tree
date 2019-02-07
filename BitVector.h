@@ -124,6 +124,10 @@ private:
      * @param start the first bit that may have changed and require updating the counters
      */
     void recompute(unsigned long start = 0);
+
+    unsigned long countOnesRaw(unsigned long lo, unsigned long hi);
+
+    unsigned long countBlocks(unsigned long lo, unsigned long hi);
 };
 
 

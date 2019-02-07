@@ -2,6 +2,7 @@
 // Created by hugo on 2-1-19.
 //
 
+#include <cstdio>
 #include "BitVector.h"
 
 const bool BitVector::operator[](unsigned long n) {
@@ -25,21 +26,16 @@ const bool BitVector::set(unsigned long n, bool b) {
 unsigned long BitVector::rank1(unsigned long n) {
     unsigned long end_blocks = n - n % BLOCK_SIZE;
     unsigned long nr_blocks = end_blocks / BLOCK_SIZE;
-    unsigned long tot = 0;
-    for (unsigned long k = 0; k < nr_blocks; k++) {
-        tot += block_counts[k];
-    }
-    for (unsigned long k = end_blocks; k < n; k++) {
-        if (data[k]) {
-            tot++;
-        }
-    }
-    return tot;
+    return countBlocks(0, nr_blocks) + countOnesRaw(end_blocks, n);
 }
 
 unsigned long BitVector::rangeRank1(unsigned long lo, unsigned long hi) {
-    // TODO optimise
-    return rank1(hi) - rank1(lo);
+    unsigned long blockLo = (lo + BLOCK_SIZE - 1) / BLOCK_SIZE, blockHi = hi / BLOCK_SIZE;
+    if (blockLo > blockHi) {
+        return countOnesRaw(lo, hi);
+    }
+    unsigned long blockStart = blockLo * BLOCK_SIZE, blockEnd = blockHi * BLOCK_SIZE;
+    return countOnesRaw(lo, blockStart) + countBlocks(blockLo, blockHi) + countOnesRaw(blockEnd, hi);
 }
 
 void BitVector::insert(unsigned long begin, unsigned long size) {
@@ -90,11 +86,22 @@ void BitVector::recompute(unsigned long start) {
         if (max > data.size()) {
             max = data.size();
         }
-        block_counts[block] = 0;
-        for (unsigned long i = min; i < max; i++) {
-            if (data[i]) {
-                block_counts[block]++;
-            }
-        }
+        block_counts[block] = (uint8_t) countOnesRaw(min, max);
     }
+}
+
+unsigned long BitVector::countOnesRaw(unsigned long lo, unsigned long hi) {
+    unsigned long tot = 0;
+    for (unsigned long k = lo; k < hi; k++) {
+        tot += data[k];
+    }
+    return tot;
+}
+
+unsigned long BitVector::countBlocks(unsigned long lo, unsigned long hi) {
+    unsigned long tot = 0;
+    for (unsigned long k = lo; k < hi; k++) {
+        tot += block_counts[k];
+    }
+    return tot;
 }

@@ -7,6 +7,19 @@
 
 #include "BitVector.h"
 
+bool validate(BitVector &bv) {
+    unsigned long n = bv.size(), nb = (n + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    for (unsigned long b = 0; b < nb; b++) {
+        unsigned long tot = 0;
+        for (unsigned long k = BLOCK_SIZE * b; k < BLOCK_SIZE * (b + 1); k++) {
+            if (k < n && bv[k]) {
+                tot++;
+            }
+        }
+        EXPECT_EQ(tot, bv.block_counts[b]);
+    }
+}
+
 TEST(BitVectorTest, ReadWrite) {
     unsigned long size = 512;
     BitVector bv(size);
@@ -40,6 +53,8 @@ TEST(BitVectorTest, ReadWrite) {
         idx++;
         i++;
     }
+
+    ASSERT_TRUE(validate(bv));
 }
 
 TEST(BitVectorTest, InsertDelete) {
@@ -68,6 +83,8 @@ TEST(BitVectorTest, InsertDelete) {
     EXPECT_EQ(bv.rank1(100), 0);
     EXPECT_EQ(bv.rank1(101), 1);
     EXPECT_EQ(bv.rank1(125), 1);
+
+    ASSERT_TRUE(validate(bv));
 }
 
 /**
@@ -85,6 +102,8 @@ TEST(BitVectorTest, Patterns) {
             EXPECT_EQ(bv[i], ((i + 1) % k == 0));
             EXPECT_EQ(bv.rank1(i), i / k);
         }
+
+        ASSERT_TRUE(validate(bv));
     }
 }
 
