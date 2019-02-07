@@ -9,6 +9,10 @@
 
 bool validate(BitVector &bv) {
     unsigned long n = bv.size(), nb = (n + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    EXPECT_EQ(nb, bv.block_counts.size());
+    if (nb != bv.block_counts.size()) {
+        return false;
+    }
     for (unsigned long b = 0; b < nb; b++) {
         unsigned long tot = 0;
         for (unsigned long k = BLOCK_SIZE * b; k < BLOCK_SIZE * (b + 1); k++) {
@@ -16,8 +20,12 @@ bool validate(BitVector &bv) {
                 tot++;
             }
         }
-        EXPECT_EQ(tot, bv.block_counts[b]);
+        EXPECT_EQ(tot, (unsigned long) bv.block_counts[b]);
+        if (tot != (unsigned long) bv.block_counts[b]) {
+            return false;
+        }
     }
+    return true;
 }
 
 TEST(BitVectorTest, ReadWrite) {
