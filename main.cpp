@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include "BitVectorTest.cpp"
 #include "TTreeTest.cpp"
-#include "DKTreeTest.cpp"
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

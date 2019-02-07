@@ -17,8 +17,8 @@ private:
     TTree *ltree;
     std::vector<unsigned long> freeColumns;
     unsigned long firstFreeColumn;
-    const unsigned long k;
     unsigned long matrixSize;
+    static constexpr unsigned long k =2;
 
 public:
 
@@ -81,7 +81,12 @@ private:
     unsigned long calculateOffset(unsigned long row, unsigned long column, unsigned long iteration);
     void increaseMatrixSize();
     void checkArgument(unsigned long a, std::string functionName);
+    void insertBlockTtree(unsigned long position);
+    void insertBlockLtree(unsigned long position);
 
+    void
+    traverseToFirst0OrEndOfTTree(unsigned long row, unsigned long column, unsigned long &iteration, unsigned long &position,
+                                 bool &centry);
 };
 
 

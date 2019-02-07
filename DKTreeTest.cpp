@@ -15,6 +15,7 @@ using namespace std;
 namespace {
 
     TEST(DKTreeTest, emptyTree) {
+        std::cout << "emptyTree test\n";
         DKTree dktree;
         dktree.printtt();
         // ttree vd dktree is een leaf node met k^2 nullen
@@ -24,6 +25,7 @@ namespace {
     }
 
     TEST(DKTreeTest, insertOneEntry) {
+        std::cout << "insert One Entry test\n";
         DKTree dktree;
         unsigned long position = dktree.insertEntry();
         dktree.printtt();
@@ -32,6 +34,7 @@ namespace {
     }
 
     TEST(DKTreeTest, insertTwoEntries) {
+        std::cout << "insert two entries test\n";
         DKTree dktree;
         unsigned long positionA = dktree.insertEntry();
         unsigned long positionB = dktree.insertEntry();
@@ -41,6 +44,7 @@ namespace {
     }
 
     TEST(DKTreeTest, findNoEdge) {
+        std::cout << "find no edge test\n";
         DKTree dktree;
         unsigned long positionA = dktree.insertEntry();
         unsigned long positionB = dktree.insertEntry();
@@ -52,6 +56,7 @@ namespace {
     }
 
     TEST(DKTreeTest, errorShouldBeThrown) {
+        std::cout << "error should be thrown test\n";
         DKTree dktree;
         unsigned long positionA = dktree.insertEntry();
         unsigned long positionB = dktree.insertEntry();
@@ -64,10 +69,50 @@ namespace {
             ASSERT_FALSE(true); // should not be reached
         } catch (const std::invalid_argument& e) {
             std::stringstream error;
-            error << "reportEdge: invalid argument " << unoccupiedPosition << ", position not occupied in matrix";
+            error << "reportEdge: invalid argument " << unoccupiedPosition << ", position not occupied in matrix\n";
 
             ASSERT_EQ(error.str(), e.what());
         }
+    }
+
+    TEST(DKTreeTest, find1PosEdge) {
+        std::cout << "find edge test\n";
+        DKTree dktree;
+        unsigned long positionA = dktree.insertEntry();
+        unsigned long positionB = dktree.insertEntry();
+        try {
+            dktree.addEdge(positionA, positionB);
+        }catch (...){
+            std::cout <<"--------------------problems in find edge test\n";
+        }
+
+
+        dktree.printtt();
+        bool resultAtoB = dktree.reportEdge(positionA, positionB);
+        bool resultBtoA = dktree.reportEdge(positionB, positionA);
+        ASSERT_TRUE(resultAtoB);
+        ASSERT_FALSE(resultBtoA);
+    }
+
+    TEST(DKTreeTest, findSecondBlockPosEdge) {
+        std::cout << "findSecondBlockPosEdge test\n";
+        DKTree dktree;
+        unsigned long positionA = dktree.insertEntry();
+         dktree.insertEntry();
+         dktree.insertEntry();
+         dktree.insertEntry();
+        unsigned long positionE = dktree.insertEntry();
+        try {
+            dktree.addEdge(positionE, positionE);
+        }catch (...){
+            std::cout <<"--------------------problems in find edge test\n";
+        }
+
+        dktree.printtt();
+        bool resultAtoB = dktree.reportEdge(positionA, positionE);
+        bool resultBtoA = dktree.reportEdge(positionE, positionE);
+        ASSERT_TRUE(resultBtoA);
+        ASSERT_FALSE(resultAtoB);
     }
 
 }
