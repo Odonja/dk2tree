@@ -9,6 +9,7 @@
 #include <cstdio>
 #include "gtest/gtest.h"
 #include <iostream>
+
 using namespace std;
 
 namespace {
@@ -48,6 +49,25 @@ namespace {
         bool resultBtoA = dktree.reportEdge(positionB, positionA);
         ASSERT_FALSE(resultAtoB);
         ASSERT_FALSE(resultBtoA);
+    }
+
+    TEST(DKTreeTest, errorShouldBeThrown) {
+        DKTree dktree;
+        unsigned long positionA = dktree.insertEntry();
+        unsigned long positionB = dktree.insertEntry();
+        bool resultAtoB = dktree.reportEdge(positionA, positionB);
+        ASSERT_FALSE(resultAtoB);
+        unsigned long unoccupiedPosition = positionA + positionB+1;
+
+        try {
+            dktree.reportEdge(positionA, unoccupiedPosition);
+            ASSERT_FALSE(true); // should not be reached
+        } catch (const std::invalid_argument& e) {
+            std::stringstream error;
+            error << "reportEdge: invalid argument " << unoccupiedPosition << ", position not occupied in matrix";
+
+            ASSERT_EQ(error.str(), e.what());
+        }
     }
 
 }

@@ -5,8 +5,10 @@
 #ifndef DK2TREE_DKTREE_H
 #define DK2TREE_DKTREE_H
 
+#include <string>
 
 #include "TTree.h"
+
 
 class DKTree final {
 
@@ -78,6 +80,7 @@ private:
     void printtree(TTree *tree, unsigned long depth=0);
     unsigned long calculateOffset(unsigned long row, unsigned long column, unsigned long iteration);
     void increaseMatrixSize();
+    void checkArgument(unsigned long a, std::string functionName);
 
 };
 

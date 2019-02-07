@@ -2,12 +2,16 @@
 // Created by anneke on 05/02/19.
 //
 
-#include "DKTree.h"
 #include <iostream>
 #include <cmath>
+#include <sstream>
+
+#include "DKTree.h"
+
 using namespace std;
 
-DKTree::DKTree() : ttree(new TTree()),ltree(new TTree()), freeColumns(),firstFreeColumn(0), k(2), matrixSize(pow(k,4)){
+DKTree::DKTree() : ttree(new TTree()), ltree(new TTree()), freeColumns(), firstFreeColumn(0), k(2),
+                   matrixSize(pow(k, 4)) {
     ttree->insertBlock(0);
 }
 
@@ -32,12 +36,12 @@ void DKTree::removeEdge(unsigned long row, unsigned long column) {
 
 unsigned long DKTree::insertEntry() {
     unsigned long insertedColumn;
-    if(!freeColumns.empty()){
+    if (!freeColumns.empty()) {
         // if a column in the middle was freed earlier then first use this column
         insertedColumn = freeColumns.front();
         freeColumns.erase(freeColumns.begin());
-    }else{
-        if (firstFreeColumn > matrixSize){
+    } else {
+        if (firstFreeColumn > matrixSize) {
             increaseMatrixSize();
         }
         // if not use the last column
@@ -54,7 +58,10 @@ void DKTree::deleteEntry(unsigned long a) {
 }
 
 bool DKTree::reportEdge(unsigned long a, unsigned long b) {
-    // TODO iff a of b is larger than firstfreecolumn of is in the freecolums list report an error
+    // test if both positions exist
+    checkArgument(a, "reportEdge");
+    checkArgument(b, "reportEdge");
+
     unsigned long iteration = 1;
     unsigned long tmax = ttree->bits();
     // the first position is 0+offset of the first iteration
@@ -62,18 +69,18 @@ bool DKTree::reportEdge(unsigned long a, unsigned long b) {
     bool centry = true; // to get the loop started
 
     // while the current position is a 1 and the end of the ttree is not reached, access the next bit
-    while(centry && position <= tmax){
+    while (centry && position <= tmax) {
         centry = ttree->access(position);
-        if(centry){
+        if (centry) {
             iteration++;
             unsigned long offset = calculateOffset(a, b, iteration);
-            unsigned long positionOfFirst = ttree->rank1(position)*k*k;
+            unsigned long positionOfFirst = ttree->rank1(position) * k * k;
             position = positionOfFirst + offset;
         }
     }
 
     // if the last bit found in the ttree is a 1 then find the final result in the ltree
-    if(centry){
+    if (centry) {
         unsigned long ltreePosition = position - tmax;
         centry = ltree->access(ltreePosition);
     }
@@ -82,9 +89,9 @@ bool DKTree::reportEdge(unsigned long a, unsigned long b) {
 
 
 void DKTree::printtt() {
-    cout <<"ttree: ";
+    cout << "ttree: ";
     printtree(ttree);
-    cout <<"ltree:";
+    cout << "ltree:";
     printtree(ltree);
 }
 
@@ -115,11 +122,11 @@ void DKTree::printtree(TTree *tree, unsigned long depth) {
 void DKTree::increaseMatrixSize() {
     // if the matrix is full, increase the size by multiplying with k
     matrixSize *= k;
-    if(ttree->findLeaf(0).P->node.leafNode->bv.rank1(k*k) > 0) {
+    if (ttree->findLeaf(0).P->node.leafNode->bv.rank1(k * k) > 0) {
         // if there already is a 1 somewhere in the matrix, add a new block
         // in front of the bitvector and set the first bit to 1
         TTree *newRoot = ttree->insertBlock(0);
-        if(newRoot != nullptr){
+        if (newRoot != nullptr) {
             ttree = newRoot;
         }
         ttree->setBit(0, true);
@@ -128,12 +135,27 @@ void DKTree::increaseMatrixSize() {
 
 unsigned long DKTree::calculateOffset(unsigned long row, unsigned long column, unsigned long iteration) {
     // first remove the rows and columns not beloning to the current block
-    unsigned long formerPartitionSize = matrixSize/pow(k, iteration-1);
+    unsigned long formerPartitionSize = matrixSize / pow(k, iteration - 1);
     unsigned long rowInBlock = row % formerPartitionSize;
     unsigned long columnInBlock = column % formerPartitionSize;
     // calculate the offset, each row partition adds k to the offset, each column partition 1
-    unsigned long partitionSize = matrixSize/pow(k, iteration);
+    unsigned long partitionSize = matrixSize / pow(k, iteration);
     unsigned long rowOffset = k * rowInBlock / partitionSize;
     unsigned long columnOffset = columnInBlock / partitionSize;
-    return rowOffset+columnOffset;
+    return rowOffset + columnOffset;
+}
+
+void DKTree::checkArgument(unsigned long a, std::string functionName) {
+    std::stringstream error;
+    if (a >= firstFreeColumn) {
+        error << functionName << ": invalid argument " << a << ", position not occupied in matrix";
+        throw std::invalid_argument(error.str());
+    } else {
+        for(auto& fc: freeColumns){
+            if (fc == a) {
+                error << functionName << ": invalid argument " << a << ", position was deleted from matrix";
+                throw std::invalid_argument(error.str());
+            }
+        }
+    }
 }
