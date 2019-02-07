@@ -8,12 +8,20 @@
 
 #include "TTree.h"
 
-class DKTree {
+class DKTree final {
 
-private:TTree *ttree = new TTree();
-private: TTree *ltree = new TTree();
-private:std::vector<unsigned long> freeColumns;
-private: unsigned long FirstFreeColumn = 0;
+private:
+    TTree *ttree;
+    TTree *ltree;
+    std::vector<unsigned long> freeColumns;
+    unsigned long firstFreeColumn;
+    const unsigned long k;
+    unsigned long matrixSize;
+
+public:
+
+    DKTree();
+    ~DKTree();
 
     /**
      * Adds an edge from a to b
@@ -53,6 +61,23 @@ private: unsigned long FirstFreeColumn = 0;
      * @return TOdo
      */
     void reportAllEdges(unsigned long aFirst, unsigned long aLast, unsigned long bFirst, unsigned long bLast);
+
+    /**
+     * Reports whether or not there is an edge between a and b.
+     * @param a
+     * @param b
+     * @return true if there is an edge between a and b, false otherwise
+     */
+    bool reportEdge(unsigned long a, unsigned long b);
+
+    void printtt();
+
+    DKTree(const DKTree&) = delete; // not allowed to use the copy constructor
+
+private:
+    void printtree(TTree *tree, unsigned long depth=0);
+    unsigned long calculateOffset(unsigned long row, unsigned long column, unsigned long iteration);
+    void increaseMatrixSize();
 
 };
 
