@@ -337,8 +337,7 @@ struct TTree {
      */
     TTree *deleteBlock(long unsigned);
 
-    // TODO: these two methods should be private, inserting/deleting \
-       should be done one block at a time
+  private:
     /**
      * Inserts the given number of bits (set to zero) at the given position in the tree
      *
@@ -348,6 +347,11 @@ struct TTree {
      * @return nullptr in most cases, but a pointer to the new root node
      * if this insert operation created a new root (e.g. when the height of the
      * tree increases)
+     *
+     * This method assumes that after the insertion, the size of the relevant
+     * leaf vector is at most one block over the maximum, which can only be
+     * guaranteed when only a single block is inserted. That is why this method
+     * is private, and insertBlock is public.
      */
     TTree *insertBits(long unsigned, long unsigned);
 
@@ -361,10 +365,14 @@ struct TTree {
      * @return nullptr in most cases, but a pointer to the new root node
      * if this insert operation changed the root (e.g. when the height of the
      * tree decreases)
+     *
+     * This method assumes that after the deletion, the size of the relevant
+     * leaf vector is at most one block under the minimum, which can only be
+     * guaranteed when only a single block is deleted. That is why this method
+     * is private, and deleteBlock is public.
      */
     TTree *deleteBits(long unsigned, long unsigned);
 
-private:
     /**
      * Checks if this node satisfies the maximum size for an internal node
      * or leaf node. If not, tries to spill a node to a sibling, or if that
