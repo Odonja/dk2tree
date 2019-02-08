@@ -217,12 +217,14 @@ TEST(TTreeTest, AccessSetBit) {
 }
 
 TEST(TTreeTest, AccessSetBit2) {
-    // Create example tree with 5 leaves (=2560 bits)
-    auto *l1 = new TTree(B);
-    auto *l2 = new TTree(B);
-    auto *l3 = new TTree(B);
-    auto *l4 = new TTree(B);
-    auto *l5 = new TTree(B);
+    // Create example tree with 5 leaves and 2560 bits
+    // Note that this test creates a binary tree which may not be a valid B+Tree
+    // However, no insertions/deletions are done so the B+Tree-specific code is never executed
+    auto *l1 = new TTree(512);
+    auto *l2 = new TTree(512);
+    auto *l3 = new TTree(512);
+    auto *l4 = new TTree(512);
+    auto *l5 = new TTree(512);
     auto *i4 = new TTree(l1, l2);
     auto *i3 = new TTree(l4, l5);
     auto *i2 = new TTree(i4, l3);
@@ -245,6 +247,8 @@ TEST(TTreeTest, AccessSetBit2) {
     }
 
     ASSERT_TRUE(validate(root));
+    ASSERT_EQ(root->bits(), 2560);
+    ASSERT_EQ(root->ones(), 100);
 
     // Check that access and rank operations return the correct results
     unsigned long idx = 0;
@@ -265,28 +269,24 @@ TEST(TTreeTest, AccessSetBit2) {
  * Tests the insert() and delete() functions
  */
 TEST(TTreeTest, InsertDelete) {
-    auto *root = new TTree(512);
-    root->setBit(250, true);
-    root->setBit(500, true);
-    // Insert 50 bits at position 200, delete bits 450-499
-    auto result = root->insertBits(200, 50);
-    if (result != nullptr) {
-        root = result;
-    }
-    // The rest has shifted right by 50 bits so we delete bits starting at 500
-    result = root->deleteBits(500, 50);
-    if (result != nullptr) {
-        root = result;
-    }
+    auto *root = new TTree(B);
+    root->setBit(B / 2 - 1, true);
+    root->setBit(B / 2, true);
+    root->setBit(B - 1, true);
+    // tree = 0000 ... 0001 1000 ... 0000 0001
+    insertBlock(&root, B / 2);
+    // tree = 0000 ... 0001 0000 1000 ... 0000 0001
+    deleteBlock(&root, B);
+    // tree = 0000 ... 0001 0000 1000 ... 0000
 
     ASSERT_TRUE(validate(root));
 
     // Exactly bits 300 and 500 should be true
-    EXPECT_EQ(root->bits(), 512);
+    EXPECT_EQ(root->bits(), B);
     EXPECT_EQ(root->ones(), 2);
 
-    for (unsigned long i = 0; i < 512; i++) {
-        EXPECT_EQ(root->access(i), i == 300 || i == 500);
+    for (unsigned long i = 0; i < B; i++) {
+        EXPECT_EQ(root->access(i), i == B / 2 - 1 || i == B / 2 + block);
     }
 }
 
@@ -319,22 +319,25 @@ TEST(TTreeTest, BPlusTest0) {
     ASSERT_TRUE(validate(root));
     ASSERT_TRUE(validateSize(root));
     unsigned long n = 512 * 100;
+    unsigned long checkInterval = 100;
     vector<bool> bv(n, false);
     // Fill up the tree
     for (unsigned long i = 0; i < n; i += block) {
         insertBlock(&root, i);
-        ASSERT_TRUE(validate(root));
-        ASSERT_TRUE(validateSize(root));
+        if ((i + 1) % checkInterval == 0) {
+            ASSERT_TRUE(validate(root));
+            ASSERT_TRUE(validateSize(root));
+        }
     }
     // Set some bits to 1
     for (unsigned long i = 0; i * i < n; i++) {
         bv[i * i] = true;
         bool changed = root->setBit(i * i, true);
         EXPECT_EQ(changed, true);
-        ASSERT_TRUE(validate(root));
-        ASSERT_TRUE(validateSize(root));
     }
 
+    ASSERT_TRUE(validate(root));
+    ASSERT_TRUE(validateSize(root));
     ASSERT_TRUE(treeEqualsVec(root, bv));
 }
 
@@ -412,7 +415,7 @@ TEST(TTreeTest, BPlusTest2) {
     for (unsigned long i = numBlocks; i > 0; i--) {
         deleteBlock(&root, (i - 1) * block);
         hi -= block;
-        if ((i - 1) % checkInterval) {
+        if ((i - 1) % checkInterval == 0) {
             ASSERT_TRUE(validate(root));
             ASSERT_TRUE(validateSize(root));
             ASSERT_TRUE(treeEqualsVec(root, ref, lo, hi));
