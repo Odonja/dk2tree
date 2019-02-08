@@ -224,7 +224,29 @@ namespace {
         }
     }
 
-
-
+    TEST(DKTreeTest, LargeRandomTest) {
+        unsigned long n = 100;
+        unsigned long m = 5000;
+        DKTree tree;
+        for (unsigned long i = 0; i < n; i++) {
+            unsigned long pos = tree.insertEntry();
+            ASSERT_EQ(pos, i);
+        }
+        unsigned long step = n*n / m;
+        for (unsigned long i = 0; i < n*n; i += step) {
+            unsigned long c = i % n;
+            unsigned long r = i / n;
+            tree.addEdge(r, c);
+        }
+        for (unsigned long i = 0; i < n*n; i++) {
+            bool exists = (i % step == 0);
+            unsigned long c = i % n;
+            unsigned long r = i / n;
+            bool result = tree.reportEdge(r, c);
+            ASSERT_EQ(exists, result);
+            tree.removeEdge(r, c);
+        }
+        tree.printtt();
+    }
 }
 #pragma clang diagnostic pop

@@ -101,7 +101,7 @@ bool DKTree::deleteTTreeEdge(const unsigned long row, const unsigned long column
             }
             // if all nodes are false this block can be deleted
             if(only0s){
-                ttree->deleteBlock(positionOfFirst);
+                deleteBlockTtree(positionOfFirst);
             }
             return !only0s; // if all bits in this block are false the parent should be false, else it should be true.
         }
@@ -109,7 +109,7 @@ bool DKTree::deleteTTreeEdge(const unsigned long row, const unsigned long column
     return true;
 }
 
-bool DKTree::deleteLTreeEdge(const unsigned long positionOfFirst, unsigned long offset) const {
+bool DKTree::deleteLTreeEdge(const unsigned long positionOfFirst, unsigned long offset) {
     // if the position is in the ltree, set the bit to false in the ltree
     unsigned  long lTreePositionOfFirst = positionOfFirst - ttree->bits();
     unsigned long lTreePosition = lTreePositionOfFirst+offset;
@@ -123,7 +123,7 @@ bool DKTree::deleteLTreeEdge(const unsigned long positionOfFirst, unsigned long 
         }
     // iff all bits in the block are 0 delete this block
     if(only0s){
-            ltree->deleteBlock(lTreePositionOfFirst);
+            deleteBlockLtree(lTreePositionOfFirst);
         }
     return !only0s; // if this block is all false then its parent should be false, else the parent should be true
 }
@@ -208,7 +208,7 @@ void DKTree::increaseMatrixSize() {
     // if the matrix is full, increase the size by multiplying with k
     matrixSize *= k;
     // position +1 since paper has rank including the position, but function is exclusive position
-    if (ttree->findLeaf(FIRSTBIT).P->node.leafNode->bv.rank1((k * k) + 1) > 0) {
+    if (ttree->rank1(k * k) > 0) {
         // if there already is a 1 somewhere in the matrix, add a new block
         // in front of the bitvector and set the first bit to 1
         insertBlockTtree(FIRSTBIT);

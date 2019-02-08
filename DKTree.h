@@ -102,7 +102,7 @@ private:
                                  unsigned long &position,
                                  bool &centry);
 
-    bool deleteLTreeEdge(unsigned long positionOfFirst, unsigned long offset) const;
+    bool deleteLTreeEdge(unsigned long positionOfFirst, unsigned long offset);
 
     bool deleteTTreeEdge(unsigned long row,  unsigned long column,  unsigned long iteration,
                           unsigned long positionOfFirst, unsigned long offset);
