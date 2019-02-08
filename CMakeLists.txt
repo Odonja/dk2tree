@@ -3,6 +3,10 @@ project(dk2tree)
 
 set(CMAKE_CXX_STANDARD 14)
 
+# enable maximum optimisation for release mode
+# comment this line out for faster compilation but slower resulting code
+set(CMAKE_BUILD_TYPE Release)
+
 # Add include and lib direc
 include_directories(~/include)
 link_directories(~/lib)
