@@ -62,12 +62,12 @@ namespace {
         unsigned long positionB = dktree.insertEntry();
         bool resultAtoB = dktree.reportEdge(positionA, positionB);
         ASSERT_FALSE(resultAtoB);
-        unsigned long unoccupiedPosition = positionA + positionB+1;
+        unsigned long unoccupiedPosition = positionA + positionB + 1;
 
         try {
             dktree.reportEdge(positionA, unoccupiedPosition);
             ASSERT_FALSE(true); // should not be reached
-        } catch (const std::invalid_argument& e) {
+        } catch (const std::invalid_argument &e) {
             std::stringstream error;
             error << "reportEdge: invalid argument " << unoccupiedPosition << ", position not occupied in matrix\n";
 
@@ -76,14 +76,14 @@ namespace {
     }
 
     TEST(DKTreeTest, find1PosEdge) {
-        std::cout << "find edge test\n";
+        std::cout << " find1PosEdge test\n";
         DKTree dktree;
         unsigned long positionA = dktree.insertEntry();
         unsigned long positionB = dktree.insertEntry();
         try {
             dktree.addEdge(positionA, positionB);
-        }catch (...){
-            std::cout <<"--------------------problems in find edge test\n";
+        } catch (...) {
+            std::cout << "--------------------problems in find edge test\n";
         }
 
 
@@ -98,14 +98,14 @@ namespace {
         std::cout << "findSecondBlockPosEdge test\n";
         DKTree dktree;
         unsigned long positionA = dktree.insertEntry();
-         dktree.insertEntry();
-         dktree.insertEntry();
-         dktree.insertEntry();
+        dktree.insertEntry();
+        dktree.insertEntry();
+        dktree.insertEntry();
         unsigned long positionE = dktree.insertEntry();
         try {
             dktree.addEdge(positionE, positionE);
-        }catch (...){
-            std::cout <<"--------------------problems in find edge test\n";
+        } catch (...) {
+            std::cout << "--------------------problems in find edge test\n";
         }
 
         dktree.printtt();
@@ -116,11 +116,11 @@ namespace {
     }
 
     TEST(DKTreeTest, findOuterCorners) {
-        std::cout << "find edge test\n";
+        std::cout << "findOuterCorners test\n";
         DKTree dktree;
         unsigned long positionA = 0;
         unsigned long positionB = 15;
-        for(unsigned long i = 0; i < 16; i++){
+        for (unsigned long i = 0; i < 16; i++) {
             dktree.insertEntry();
         }
         dktree.addEdge(positionA, positionA);
@@ -140,11 +140,11 @@ namespace {
     }
 
     TEST(DKTreeTest, findCenter) {
-        std::cout << "find edge test\n";
+        std::cout << "findCenter test\n";
         DKTree dktree;
         unsigned long positionA = 7;
         unsigned long positionB = 8;
-        for(unsigned long i = 0; i < 16; i++){
+        for (unsigned long i = 0; i < 16; i++) {
             dktree.insertEntry();
         }
         dktree.addEdge(positionA, positionA);
@@ -164,15 +164,15 @@ namespace {
     }
 
     TEST(DKTreeTest, increaseTableSizeAfterAddingAnEdge) {
-        std::cout << "find edge test\n";
+        std::cout << "increaseTableSizeAfterAddingAnEdge test\n";
         DKTree dktree;
         unsigned long positionA = 0;
         unsigned long positionB = 31;
-        for(unsigned long i = 0; i < 16; i++){
+        for (unsigned long i = 0; i < 16; i++) {
             dktree.insertEntry();
         }
         dktree.addEdge(positionA, positionA);
-        for(unsigned long i = 0; i < 16; i++){
+        for (unsigned long i = 0; i < 16; i++) {
             dktree.insertEntry();
         }
 
@@ -192,7 +192,7 @@ namespace {
     }
 
     TEST(DKTreeTest, addAndDeleteLeftCornerEdge) {
-        std::cout << "find edge test\n";
+        std::cout << "addAndDeleteLeftCornerEdge test\n";
         DKTree dktree;
         unsigned long positionA = 0;
         dktree.insertEntry();
@@ -204,21 +204,21 @@ namespace {
     }
 
     TEST(DKTreeTest, addAndDeleteLeftmiddleEdgeOthersStayTrue) {
-        std::cout << "find edge test\n";
+        std::cout << "addAndDeleteLeftmiddleEdgeOthersStayTrue test\n";
         DKTree dktree;
         unsigned long positionA = 0;
         unsigned long positionB = 8;
-        for(unsigned long i = 0; i < 16; i++){
+        for (unsigned long i = 0; i < 16; i++) {
             dktree.insertEntry();
             dktree.addEdge(positionA, i);
         }
         dktree.removeEdge(positionA, positionB);
         dktree.printtt();
-        for(unsigned long i = 0; i < 16; i++){
+        for (unsigned long i = 0; i < 16; i++) {
             bool current = dktree.reportEdge(positionA, i);
-            if(i == 8){
+            if (i == 8) {
                 ASSERT_FALSE(current);
-            }else{
+            } else {
                 ASSERT_TRUE(current);
             }
         }
@@ -232,13 +232,13 @@ namespace {
             unsigned long pos = tree.insertEntry();
             ASSERT_EQ(pos, i);
         }
-        unsigned long step = n*n / m;
-        for (unsigned long i = 0; i < n*n; i += step) {
+        unsigned long step = n * n / m;
+        for (unsigned long i = 0; i < n * n; i += step) {
             unsigned long c = i % n;
             unsigned long r = i / n;
             tree.addEdge(r, c);
         }
-        for (unsigned long i = 0; i < n*n; i++) {
+        for (unsigned long i = 0; i < n * n; i++) {
             bool exists = (i % step == 0);
             unsigned long c = i % n;
             unsigned long r = i / n;
@@ -248,5 +248,95 @@ namespace {
         }
         tree.printtt();
     }
+
+    TEST(DKTreeTest, reportAllEdgesEmptyMatrixNoEdges) {
+        DKTree tree;
+        vector<unsigned long> rows;
+        vector<unsigned long> columns;
+        vector<std::pair<unsigned long, unsigned long>> findings = tree.reportAllEdges(rows, columns);
+        ASSERT_TRUE(findings.empty());
+
+    }
+
+    TEST(DKTreeTest, reportAllEdges1Edge) {
+        DKTree tree;
+        tree.insertEntry();
+        tree.addEdge(0, 0);
+        vector<unsigned long> rows{0};
+        vector<unsigned long> columns{0};
+        vector<std::pair<unsigned long, unsigned long>> findings = tree.reportAllEdges(rows, columns);
+        ASSERT_FALSE(findings.empty());
+        ASSERT_EQ(0, findings[0].first);
+        ASSERT_EQ(0, findings[0].second);
+    }
+
+    TEST(DKTreeTest, reportAllEdgesOneAAllB) {
+        std::cout << "addAndDeleteLeftmiddleEdgeOthersStayTrue test\n";
+        DKTree dktree;
+        for (unsigned long i = 0; i < 16; i++) {
+            dktree.insertEntry();
+        }
+        dktree.addEdge(6, 2);
+        dktree.addEdge(6, 5);
+        dktree.addEdge(6, 8);
+        dktree.addEdge(6, 13);
+        ASSERT_TRUE(dktree.reportEdge(6, 2));
+        ASSERT_TRUE(dktree.reportEdge(6, 5));
+        ASSERT_TRUE(dktree.reportEdge(6, 8));
+        ASSERT_TRUE(dktree.reportEdge(6, 13));
+        dktree.printtt();
+        vector<unsigned long> rows{6};
+        vector<unsigned long> columns{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+        vector<std::pair<unsigned long, unsigned long>> findings = dktree.reportAllEdges(rows, columns);
+        for (auto finding:findings) {
+            std::cout << "<" << finding.first << ", " << finding.second << ">, ";
+        }
+        printf("\n");
+        ASSERT_EQ(4, findings.size());
+        ASSERT_EQ(6, findings[0].first);
+        ASSERT_EQ(2, findings[0].second);
+        ASSERT_EQ(6, findings[1].first);
+        ASSERT_EQ(5, findings[1].second);
+        ASSERT_EQ(6, findings[2].first);
+        ASSERT_EQ(8, findings[2].second);
+        ASSERT_EQ(6, findings[3].first);
+        ASSERT_EQ(13, findings[3].second);
+    }
+
+    TEST(DKTreeTest, reportAllEdgesOneBAllA) {
+        std::cout << "addAndDeleteLeftmiddleEdgeOthersStayTrue test\n";
+        DKTree dktree;
+        for (unsigned long i = 0; i < 16; i++) {
+            dktree.insertEntry();
+        }
+        dktree.addEdge(2, 6);
+        dktree.addEdge(5, 6);
+        dktree.addEdge(8, 6);
+        dktree.addEdge(13, 6);
+        ASSERT_TRUE(dktree.reportEdge(2, 6));
+        ASSERT_TRUE(dktree.reportEdge(5, 6));
+        ASSERT_TRUE(dktree.reportEdge(8, 6));
+        ASSERT_TRUE(dktree.reportEdge(13, 6));
+        dktree.printtt();
+        vector<unsigned long> columns{6};
+        vector<unsigned long> rows{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+        vector<std::pair<unsigned long, unsigned long>> findings = dktree.reportAllEdges(rows, columns);
+        for (auto finding:findings) {
+            std::cout << "<" << finding.first << ", " << finding.second << ">, ";
+        }
+        printf("\n");
+        ASSERT_EQ(4, findings.size());
+        ASSERT_EQ(2, findings[0].first);
+        ASSERT_EQ(6, findings[0].second);
+        ASSERT_EQ(5, findings[1].first);
+        ASSERT_EQ(6, findings[1].second);
+        ASSERT_EQ(8, findings[2].first);
+        ASSERT_EQ(6, findings[2].second);
+        ASSERT_EQ(13, findings[3].first);
+        ASSERT_EQ(6, findings[3].second);
+
+
+    }
+
 }
 #pragma clang diagnostic pop

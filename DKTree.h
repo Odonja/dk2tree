@@ -6,6 +6,7 @@
 #define DK2TREE_DKTREE_H
 
 #include <string>
+#include <utility>
 
 #include "TTree.h"
 
@@ -19,6 +20,7 @@ private:
     unsigned long firstFreeColumn;
     unsigned long matrixSize;
     static constexpr unsigned long k = 2;
+    static constexpr unsigned long k2 = k * k;
 
 public:
 
@@ -56,14 +58,12 @@ public:
 
 
     /**
-     * Reports all edges between a, aFirst <= a <= aLast, and b, bFirst <= b <= bLast.
-     * @param aFirst
-     * @param aLast
-     * @param bFirst
-     * @param bLast
+     * Reports all edges between a element of A, and b element of B.
+     * @param A
+     * @param B
      * @return TOdo
      */
-    void reportAllEdges(unsigned long aFirst, unsigned long aLast, unsigned long bFirst, unsigned long bLast);
+    vector<std::pair<unsigned long, unsigned long>> reportAllEdges(vector<unsigned long> &A, vector<unsigned long> &B);
 
     /**
      * Reports whether or not there is an edge between a and b.
@@ -104,8 +104,19 @@ private:
 
     bool deleteLTreeEdge(unsigned long positionOfFirst, unsigned long offset);
 
-    bool deleteTTreeEdge(unsigned long row,  unsigned long column,  unsigned long iteration,
-                          unsigned long positionOfFirst, unsigned long offset);
+    bool deleteTTreeEdge(unsigned long row, unsigned long column, unsigned long iteration,
+                         unsigned long positionOfFirst, unsigned long offset);
+
+    void findAllEdges(vector<unsigned long> &rows, vector<unsigned long> &columns,
+                      unsigned long &firstAt, unsigned long &iteration,
+                      vector<std::pair<unsigned long, unsigned long>> &findings);
+
+    vector<unsigned long> sortRowsOnOffset(vector<unsigned long> &rows, unsigned long &partitionSize);
+
+    vector<unsigned long> sortColumnsOnOffset(vector<unsigned long> &columns, unsigned long &partitionSize);
+
+
+
 };
 
 
