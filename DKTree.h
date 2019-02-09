@@ -114,9 +114,6 @@ private:
     vector<unsigned long> sortRowsOnOffset(vector<unsigned long> &rows, unsigned long &partitionSize);
 
     vector<unsigned long> sortColumnsOnOffset(vector<unsigned long> &columns, unsigned long &partitionSize);
-
-
-
 };
 
 

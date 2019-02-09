@@ -338,5 +338,20 @@ namespace {
 
     }
 
+    class VectorData {
+        vector<unsigned long> &entry;
+        unsigned long start;
+        unsigned long end;
+
+        VectorData(vector<unsigned long> &aEntry, unsigned long aStart, unsigned long aEnd) : entry(aEntry),
+                                                                                              start(aStart),
+                                                                                              end(aEnd) {}
+
+        VectorData(VectorData &vectorData, unsigned long aStart, unsigned long aEnd) : entry(vectorData.entry),
+                                                                                              start(aStart),
+                                                                                              end(aEnd) {}
+    };
+
+
 }
 #pragma clang diagnostic pop
