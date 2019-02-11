@@ -14,7 +14,13 @@ DKTree::DKTree() : ttree(new TTree()), ltree(new TTree()), freeColumns(), firstF
     ttree->insertBlock(0);
 }
 
+DKTree::DKTree(unsigned long power) : ttree(new TTree()), ltree(new TTree()), freeColumns(), firstFreeColumn(0),
+                                      matrixSize(pow(k, power)) {
+    ttree->insertBlock(0);
+}
+
 DKTree::~DKTree() {
+
     delete ttree;
     delete ltree;
 }
@@ -198,9 +204,9 @@ bool DKTree::deleteEdges(VectorData &rows, VectorData &columns) {
         // for each offset, there can be a relation if there is atleast one row and one column and if its value is not 0.
         for (int offset = k2 - 1; offset >= 0; offset--) {
             unsigned long rowOffset = offset / k;
-           // std::cout << "rowOffset " << rowOffset << "\n";
+            // std::cout << "rowOffset " << rowOffset << "\n";
             unsigned long columnOffset = offset % k;
-           // std::cout << "columnOffset " << columnOffset << "\n";
+            // std::cout << "columnOffset " << columnOffset << "\n";
             unsigned long currentNode = rows.firstAt + offset;
             bool nodeSubtreeHasEdges = ttree->access(currentNode);
             if (nodeSubtreeHasEdges) {
@@ -213,47 +219,58 @@ bool DKTree::deleteEdges(VectorData &rows, VectorData &columns) {
                     VectorData rowData(rows, rowStart[rowOffset], rowEnd[rowOffset], nextIteration, nextNode);
                     VectorData columnData(columns, columnStart[columnOffset], columnEnd[columnOffset], nextIteration,
                                           nextNode);
+                    // check if there are still edges left in its child nodes after deleting the edges from the rowData columnData
                     bool stillHasEdges = deleteEdges(rowData, columnData);
+                    // if there still are edges in its child nodes then this node stays 1 and so should its parent
                     if (stillHasEdges) {
                         only0s = false;
                     } else {
+                        // if there are no edges in its child nodes this edge can be set to 0
                         ttree->setBit(currentNode, false);
                     }
-                }else{
+                } else {
+                    // if this offset is 1 and there is no edge to delete, its parent also should know there are still edges
                     only0s = false;
                 }
             }
         }
         if (only0s && rows.iteration > 1) {
+            // if there are no more edges in this block it can be deleted
             deleteBlockTtree(rows.firstAt);
         }
 
     } else { // we look at ltree stuff
-        const unsigned long partitionSize = matrixSize / pow(k, rows.iteration);
-        if (partitionSize > 1) {
-            std::stringstream error;
-            error << "findEdgesInLTree: not lTree iteration\n";
-            throw std::invalid_argument(error.str());
-        }
-        unsigned long ltreeposition = rows.firstAt - ttree->bits();
-        for (unsigned long i = rows.start; i < rows.end; i++) {
-            for (unsigned long j = columns.start; j < columns.end; j++) {
-                unsigned long offset = calculateOffset(rows.entry[i], columns.entry[j], rows.iteration);
-                unsigned long nodePosition = ltreeposition + offset;
-                ltree->setBit(nodePosition, false);
-            }
-        }
-        for (unsigned long offst = 0; offst < k2 && only0s; offst++) {
-            if (ltree->access(ltreeposition + offst)) {
-                only0s = false;
-            }
-        }
-        if (only0s) {
-            deleteBlockLtree(ltreeposition);
-        }
+        only0s = deleteEdgesFromLTree(rows, columns);
     }
 
     return !only0s;
+}
+
+bool DKTree::deleteEdgesFromLTree(VectorData &rows, VectorData &columns) {
+    bool only0s = true;
+    const unsigned long partitionSize = matrixSize / pow(k, rows.iteration);
+    if (partitionSize > 1) {
+        std::stringstream error;
+        error << "findEdgesInLTree: not lTree iteration\n";
+        throw std::invalid_argument(error.str());
+    }
+    unsigned long ltreeposition = rows.firstAt - ttree->bits();
+    for (unsigned long i = rows.start; i < rows.end; i++) {
+        for (unsigned long j = columns.start; j < columns.end; j++) {
+            unsigned long offset = calculateOffset(rows.entry[i], columns.entry[j], rows.iteration);
+            unsigned long nodePosition = ltreeposition + offset;
+            ltree->setBit(nodePosition, false);
+        }
+    }
+    for (unsigned long offst = 0; offst < k2 && only0s; offst++) {
+        if (ltree->access(ltreeposition + offst)) {
+            only0s = false;
+        }
+    }
+    if (only0s) {
+        deleteBlockLtree(ltreeposition);
+    }
+    return only0s;
 }
 
 bool DKTree::reportEdge(unsigned long a, unsigned long b) {
