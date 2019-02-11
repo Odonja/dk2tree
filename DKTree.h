@@ -7,8 +7,29 @@
 
 #include <string>
 #include <utility>
+#include <bits/stdc++.h>
 
 #include "TTree.h"
+
+class VectorData {
+public:
+    const vector<unsigned long> &entry;
+    int start;
+    int end;
+    unsigned long iteration;
+    unsigned long firstAt;
+
+    VectorData(vector<unsigned long> &aEntry, int aStart, int aEnd, unsigned long aIteration,
+               unsigned long aFirstAt)
+            : entry(aEntry), start(aStart), end(aEnd), iteration(aIteration), firstAt(aFirstAt) {}
+
+    // constructor for a first iteration, it includes the whole vector and always starts at the first bit of the ttree
+    explicit VectorData(vector<unsigned long> &aEntry)
+            : entry(aEntry), start(0), end(aEntry.size()), iteration(1), firstAt(0) {}
+
+    VectorData(VectorData &vectorData, int aStart, int aEnd, unsigned long aIteration, unsigned long aFirstAt)
+            : entry(vectorData.entry), start(aStart), end(aEnd), iteration(aIteration), firstAt(aFirstAt) {}
+};
 
 
 class DKTree final {
@@ -27,6 +48,7 @@ public:
     DKTree();
 
     ~DKTree();
+
 
     /**
      * Adds an edge from a to b
@@ -63,7 +85,9 @@ public:
      * @param B
      * @return TOdo
      */
-    vector<std::pair<unsigned long, unsigned long>> reportAllEdges(vector<unsigned long> &A, vector<unsigned long> &B);
+    vector<std::pair<unsigned long, unsigned long>>
+    reportAllEdges(const vector<unsigned long> &A, const vector<unsigned long> &B);
+
 
     /**
      * Reports whether or not there is an edge between a and b.
@@ -107,14 +131,24 @@ private:
     bool deleteTTreeEdge(unsigned long row, unsigned long column, unsigned long iteration,
                          unsigned long positionOfFirst, unsigned long offset);
 
-    void findAllEdges(vector<unsigned long> &rows, vector<unsigned long> &columns,
+    void findAllEdges(const vector<unsigned long> &rows, const vector<unsigned long> &columns,
                       unsigned long &firstAt, unsigned long &iteration,
                       vector<std::pair<unsigned long, unsigned long>> &findings);
 
-    vector<unsigned long> sortRowsOnOffset(vector<unsigned long> &rows, unsigned long &partitionSize);
+    void findAllEdges(VectorData &rows, VectorData &columns,
+                      vector<std::pair<unsigned long, unsigned long>> &findings);
 
-    vector<unsigned long> sortColumnsOnOffset(vector<unsigned long> &columns, unsigned long &partitionSize);
+    void sortAndCheckVector(vector<unsigned long> &element);
+
+
+    void
+    splitEntriesOnOffset(const VectorData &entries, unsigned long partitionSize, int *entrieStart,
+                         int *entrieEnd) const;
+
+    void findEdgesInLTree(const VectorData &rows, const VectorData &columns,
+                          vector<std::pair<unsigned long, unsigned long>> &findings);
+
+    bool deleteEdges( VectorData &rows,  VectorData &columns);
 };
-
 
 #endif //DK2TREE_DKTREE_H

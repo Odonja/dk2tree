@@ -203,6 +203,18 @@ namespace {
         ASSERT_FALSE(topLeft);
     }
 
+    TEST(DKTreeTest, addAndDeleteSingleEntry) {
+        std::cout << "addAndDeleteSingleEntry test\n";
+        DKTree dktree;
+        unsigned long positionA = 0;
+        dktree.insertEntry();
+        dktree.addEdge(positionA, positionA);
+        dktree.deleteEntry(positionA);
+        dktree.printtt();
+        //bool topLeft = dktree.reportEdge(positionA, positionA);
+        //ASSERT_FALSE(topLeft);
+    }
+
     TEST(DKTreeTest, addAndDeleteLeftmiddleEdgeOthersStayTrue) {
         std::cout << "addAndDeleteLeftmiddleEdgeOthersStayTrue test\n";
         DKTree dktree;
@@ -223,6 +235,8 @@ namespace {
             }
         }
     }
+
+
 
     TEST(DKTreeTest, LargeRandomTest) {
         unsigned long n = 100;
@@ -249,13 +263,19 @@ namespace {
         tree.printtt();
     }
 
-    TEST(DKTreeTest, reportAllEdgesEmptyMatrixNoEdges) {
+    TEST(DKTreeTest, reportAllEdgesEmptyMatrixNoEdgesException) {
         DKTree tree;
         vector<unsigned long> rows;
         vector<unsigned long> columns;
-        vector<std::pair<unsigned long, unsigned long>> findings = tree.reportAllEdges(rows, columns);
-        ASSERT_TRUE(findings.empty());
+        try {
+            vector<std::pair<unsigned long, unsigned long>> findings = tree.reportAllEdges(rows, columns);
+            ASSERT_FALSE(true); // should not be reached
+        } catch (const std::invalid_argument &e) {
+            std::stringstream error;
+            error << "sortAndCheckVector: invalid argument, empty input vector \n";
 
+            ASSERT_EQ(error.str(), e.what());
+        }
     }
 
     TEST(DKTreeTest, reportAllEdges1Edge) {
@@ -338,20 +358,76 @@ namespace {
 
     }
 
-    class VectorData {
-        vector<unsigned long> &entry;
-        unsigned long start;
-        unsigned long end;
+    TEST(DKTreeTest, testSorting) {
+        vector<unsigned long> v{1, 5, 8, 9, 6, 7, 3, 4, 2, 0, 2, 2, 2};
 
-        VectorData(vector<unsigned long> &aEntry, unsigned long aStart, unsigned long aEnd) : entry(aEntry),
-                                                                                              start(aStart),
-                                                                                              end(aEnd) {}
+        sort(v.begin(), v.end());
+        v.erase(unique(v.begin(), v.end()), v.end());
+        v.erase(v.begin() + 3);
 
-        VectorData(VectorData &vectorData, unsigned long aStart, unsigned long aEnd) : entry(vectorData.entry),
-                                                                                              start(aStart),
-                                                                                              end(aEnd) {}
-    };
 
+        cout << "Sorted \n";
+        for (auto x : v) {
+            cout << x << " ";
+        }
+        ASSERT_EQ(9, v.size());
+    }
+
+    TEST(DKTreeTest, addAndDeleteLeftmiddleEdgesOthersStayTrue) {
+        std::cout << "addAndDeleteEntryOthersStayTrue test\n";
+        DKTree dktree;
+        for (unsigned long i = 0; i < 16; i++) {
+            dktree.insertEntry();
+        }
+        dktree.addEdge(1, 2);
+        dktree.addEdge(1, 3);
+        dktree.addEdge(1, 4);
+        dktree.addEdge(2, 9);
+        dktree.addEdge(3, 0);
+        dktree.addEdge(3, 1);
+        dktree.addEdge(3, 6);
+        dktree.addEdge(5, 7);
+        dktree.addEdge(5, 8);
+        dktree.addEdge(6, 2);
+        dktree.addEdge(6, 5);
+        dktree.addEdge(6, 8);
+        dktree.addEdge(6, 13);
+        dktree.addEdge(7, 6);
+        dktree.addEdge(8, 6);
+        dktree.addEdge(9, 6);
+        dktree.addEdge(11, 4);
+        dktree.addEdge(13, 6);
+        dktree.addEdge(15, 6);
+        dktree.deleteEntry(6);
+        dktree.printtt();
+
+        vector<unsigned long> validEntries{0, 1, 2, 3, 4, 5,  7, 8, 9, 10, 11, 12, 13, 14, 15};
+        vector<std::pair<unsigned long, unsigned long>> findings = dktree.reportAllEdges(validEntries, validEntries);
+        for (auto finding:findings) {
+            std::cout << "<" << finding.first << ", " << finding.second << ">, ";
+        }
+        printf("\n");
+        ASSERT_EQ(9, findings.size());
+        ASSERT_EQ(1, findings[0].first);
+        ASSERT_EQ(2, findings[0].second);
+        ASSERT_EQ(1, findings[1].first);
+        ASSERT_EQ(3, findings[1].second);
+        ASSERT_EQ(3, findings[2].first);
+        ASSERT_EQ(0, findings[2].second);
+        ASSERT_EQ(3, findings[3].first);
+        ASSERT_EQ(1, findings[3].second);
+        ASSERT_EQ(1, findings[4].first);
+        ASSERT_EQ(4, findings[4].second);
+        ASSERT_EQ(5, findings[5].first);
+        ASSERT_EQ(7, findings[5].second);
+        ASSERT_EQ(2, findings[6].first);
+        ASSERT_EQ(9, findings[6].second);
+        ASSERT_EQ(5, findings[7].first);
+        ASSERT_EQ(8, findings[7].second);
+        ASSERT_EQ(11, findings[8].first);
+        ASSERT_EQ(4, findings[8].second);
+
+    }
 
 }
 #pragma clang diagnostic pop

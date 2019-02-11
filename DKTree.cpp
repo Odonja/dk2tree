@@ -148,7 +148,112 @@ unsigned long DKTree::insertEntry() {
 
 
 void DKTree::deleteEntry(unsigned long a) {
-//TODO
+    checkArgument(a, "deleteEntry");
+    vector<unsigned long> allOthers;
+    vector<unsigned long> thisOne{a};
+    for (unsigned long i = 0; i < firstFreeColumn; i++) {
+        allOthers.push_back(i);
+    }
+    for (int i = freeColumns.size() - 1; i >= 0; i--) {
+        allOthers.erase(allOthers.begin() + freeColumns[i]);
+    }
+
+    VectorData thisA(thisOne);
+    VectorData others(allOthers);
+    deleteEdges(thisA, others);
+    deleteEdges(others, thisA);
+    if (a == firstFreeColumn - 1) {
+        firstFreeColumn--;
+    } else {
+        freeColumns.push_back(a);
+        sort(freeColumns.begin(), freeColumns.end());
+    }
+}
+
+bool DKTree::deleteEdges(VectorData &rows, VectorData &columns) {
+    if (rows.firstAt != columns.firstAt || rows.iteration != columns.iteration) {
+        std::stringstream error;
+        error << "deleteEdges: rows and columns asynch\n";
+        throw std::invalid_argument(error.str());
+    }
+    const unsigned long partitionSize = matrixSize / pow(k, rows.iteration);
+    bool only0s = true;
+    if (partitionSize > 1) { // we are looking at ttree stuff
+        // sort the rows and columns according to which offsets they belong
+        int rowStart[k];
+        int rowEnd[k];
+        int columnStart[k];
+        int columnEnd[k];
+
+        for (int i = 0; i < k; i++) {
+            rowStart[i] = -1;
+            rowEnd[i] = -1;
+            columnStart[i] = -1;
+            columnEnd[i] = -1;
+        }
+
+        splitEntriesOnOffset(rows, partitionSize, rowStart, rowEnd);
+        splitEntriesOnOffset(columns, partitionSize, columnStart, columnEnd);
+
+        // for each offset, there can be a relation if there is atleast one row and one column and if its value is not 0.
+        for (int offset = k2 - 1; offset >= 0; offset--) {
+            unsigned long rowOffset = offset / k;
+           // std::cout << "rowOffset " << rowOffset << "\n";
+            unsigned long columnOffset = offset % k;
+           // std::cout << "columnOffset " << columnOffset << "\n";
+            unsigned long currentNode = rows.firstAt + offset;
+            bool nodeSubtreeHasEdges = ttree->access(currentNode);
+            if (nodeSubtreeHasEdges) {
+                if (!(rowStart[rowOffset] == -1 || columnStart[columnOffset] == -1)) {
+                    // there can only be a relation if there is atleast 1 element in both of them
+                    // rank function is exclusive so +1
+                    unsigned long nextNode = ttree->rank1(currentNode + 1) * k2;
+                    // if there are edges in this subtree find the edges stored in the child nodes
+                    unsigned long nextIteration = rows.iteration + 1;
+                    VectorData rowData(rows, rowStart[rowOffset], rowEnd[rowOffset], nextIteration, nextNode);
+                    VectorData columnData(columns, columnStart[columnOffset], columnEnd[columnOffset], nextIteration,
+                                          nextNode);
+                    bool stillHasEdges = deleteEdges(rowData, columnData);
+                    if (stillHasEdges) {
+                        only0s = false;
+                    } else {
+                        ttree->setBit(currentNode, false);
+                    }
+                }else{
+                    only0s = false;
+                }
+            }
+        }
+        if (only0s && rows.iteration > 1) {
+            deleteBlockTtree(rows.firstAt);
+        }
+
+    } else { // we look at ltree stuff
+        const unsigned long partitionSize = matrixSize / pow(k, rows.iteration);
+        if (partitionSize > 1) {
+            std::stringstream error;
+            error << "findEdgesInLTree: not lTree iteration\n";
+            throw std::invalid_argument(error.str());
+        }
+        unsigned long ltreeposition = rows.firstAt - ttree->bits();
+        for (unsigned long i = rows.start; i < rows.end; i++) {
+            for (unsigned long j = columns.start; j < columns.end; j++) {
+                unsigned long offset = calculateOffset(rows.entry[i], columns.entry[j], rows.iteration);
+                unsigned long nodePosition = ltreeposition + offset;
+                ltree->setBit(nodePosition, false);
+            }
+        }
+        for (unsigned long offst = 0; offst < k2 && only0s; offst++) {
+            if (ltree->access(ltreeposition + offst)) {
+                only0s = false;
+            }
+        }
+        if (only0s) {
+            deleteBlockLtree(ltreeposition);
+        }
+    }
+
+    return !only0s;
 }
 
 bool DKTree::reportEdge(unsigned long a, unsigned long b) {
@@ -171,83 +276,111 @@ bool DKTree::reportEdge(unsigned long a, unsigned long b) {
     return centry;
 }
 
-vector<std::pair<unsigned long, unsigned long>> DKTree::reportAllEdges(vector<unsigned long> &A,
-                                                                       vector<unsigned long> &B) {
-    //TODO add a check and sort and optimize
-    unsigned long FIRSTBIT = 0;
-    unsigned long FIRSTITERATION = 1;
+vector<std::pair<unsigned long, unsigned long>> DKTree::reportAllEdges(const vector<unsigned long> &A,
+                                                                       const vector<unsigned long> &B) {
+    vector<unsigned long> rowsA(A);
+    vector<unsigned long> columnsB(B);
+    sortAndCheckVector(rowsA);
+    sortAndCheckVector(columnsB);
+
+    VectorData rows(rowsA);
+    VectorData columns(columnsB);
     vector<std::pair<unsigned long, unsigned long>> findings;
-    findAllEdges(A, B, FIRSTBIT, FIRSTITERATION, findings);
+    findAllEdges(rows, columns, findings);
     return findings;
 }
 
+
 void
-DKTree::findAllEdges(vector<unsigned long> &rows, vector<unsigned long> &columns,
-                     unsigned long &firstAt, unsigned long &iteration,
+DKTree::findAllEdges(VectorData &rows, VectorData &columns,
                      vector<std::pair<unsigned long, unsigned long>> &findings) {
-    const unsigned long partitionSize = matrixSize / pow(k, iteration);
+    if (rows.firstAt != columns.firstAt || rows.iteration != columns.iteration) {
+        std::stringstream error;
+        error << "findAllEdges: rows and columns asynch\n";
+        throw std::invalid_argument(error.str());
+    }
+    const unsigned long partitionSize = matrixSize / pow(k, rows.iteration);
     if (partitionSize > 1) { // we are looking at ttree stuff
         // sort the rows and columns according to which offsets they belong
-        vector<unsigned long> rowsForOffset[k2];
-        vector<unsigned long> columnsForOffset[k2];
-        const unsigned long formerPartitionSize = partitionSize * k;
+        int rowStart[k];
+        int rowEnd[k];
+        int columnStart[k];
+        int columnEnd[k];
 
-        for (auto row:rows) {
-            unsigned long rowInBlock = row % formerPartitionSize;
-            unsigned long rowOffset = (rowInBlock / partitionSize) * k;
-            for (unsigned long i = 0; i < k; i++) {
-                rowsForOffset[rowOffset + i].push_back(row);
-            }
+        for (int i = 0; i < k; i++) {
+            rowStart[i] = -1;
+            rowEnd[i] = -1;
+            columnStart[i] = -1;
+            columnEnd[i] = -1;
         }
 
-        for (auto column:columns) {
-            unsigned long columnInBlock = column % formerPartitionSize;
-            unsigned long columnOffset = (columnInBlock / partitionSize);
-            for (unsigned long i = 0; i < k; i++) {
-                columnsForOffset[columnOffset + i*k].push_back(column);
-            }
-        }
-
-//        for (unsigned long offset = 0; offset < k2; offset++) {
-//            std::cout << "offset " << offset <<":\n rows: ";
-//            for (auto row:rowsForOffset[offset]) {
-//                std::cout << row << " ";
-//            }
-//            std::cout <<"\n columns: ";
-//            for (auto column:columnsForOffset[offset]) {
-//                std::cout << column << " ";
-//            }
-//            std::cout <<"\n" ;
-//        }
+        splitEntriesOnOffset(rows, partitionSize, rowStart, rowEnd);
+        splitEntriesOnOffset(columns, partitionSize, columnStart, columnEnd);
 
         // for each offset, there can be a relation if there is atleast one row and one column and if its value is not 0.
         for (unsigned long offset = 0; offset < k2; offset++) {
-            if (!(rowsForOffset[offset].empty() || columnsForOffset[offset].empty())) {
+            unsigned long rowOffset = offset / k;
+            unsigned long columnOffset = offset % k;
+            if (!(rowStart[rowOffset] == -1 || columnStart[columnOffset] == -1)) {
                 // there can only be a relation if there is atleast 1 element in both of them
-                unsigned long currentNode = firstAt + offset;
+                unsigned long currentNode = rows.firstAt + offset;
                 bool nodeSubtreeHasEdges = ttree->access(currentNode);
                 if (nodeSubtreeHasEdges) {
                     // rank function is exclusive so +1
                     unsigned long nextNode = ttree->rank1(currentNode + 1) * k2;
                     // if there are edges in this subtree find the edges stored in the child nodes
-                    unsigned long nextIteration = iteration + 1;
-                    findAllEdges(rowsForOffset[offset], columnsForOffset[offset], nextNode, nextIteration,
-                                 findings);
+                    unsigned long nextIteration = rows.iteration + 1;
+                    VectorData rowData(rows, rowStart[rowOffset], rowEnd[rowOffset], nextIteration, nextNode);
+                    VectorData columnData(columns, columnStart[columnOffset], columnEnd[columnOffset], nextIteration,
+                                          nextNode);
+                    findAllEdges(rowData, columnData, findings);
                 }
             }
         }
     } else { // we look at ltree stuff
-        unsigned long ltreeposition = firstAt - ttree->bits();
-        for (auto row : rows) {
-            for (auto column:columns) {
-                unsigned long offset = calculateOffset(row, column, iteration);
-                unsigned long nodePosition = ltreeposition + offset;
-                bool hasEdge = ltree->access(nodePosition);
-                if (hasEdge) {
-                    std::pair<unsigned long, unsigned long> edge(row, column);
-                    findings.push_back(edge);
-                }
+        findEdgesInLTree(rows, columns, findings);
+    }
+}
+
+void DKTree::findEdgesInLTree(const VectorData &rows, const VectorData &columns,
+                              vector<pair<unsigned long, unsigned long>> &findings) {
+
+    const unsigned long partitionSize = matrixSize / pow(k, rows.iteration);
+    if (partitionSize > 1) {
+        std::stringstream error;
+        error << "findEdgesInLTree: not lTree iteration\n";
+        throw std::invalid_argument(error.str());
+    }
+    unsigned long ltreeposition = rows.firstAt - ttree->bits();
+    for (unsigned long i = rows.start; i < rows.end; i++) {
+        for (unsigned long j = columns.start; j < columns.end; j++) {
+            unsigned long offset = calculateOffset(rows.entry[i], columns.entry[j], rows.iteration);
+            unsigned long nodePosition = ltreeposition + offset;
+            bool hasEdge = ltree->access(nodePosition);
+            if (hasEdge) {
+                pair<unsigned long, unsigned long> edge(rows.entry[i], columns.entry[j]);
+                findings.push_back(edge);
             }
+        }
+    }
+}
+
+void DKTree::splitEntriesOnOffset(const VectorData &entries, const unsigned long partitionSize, int *entrieStart,
+                                  int *entrieEnd) const {
+    const unsigned long formerPartitionSize = partitionSize * k;
+    unsigned long offsetStarted;
+    for (unsigned long i = entries.start; i < entries.end; i++) {
+        unsigned long entrieInBlock = entries.entry[i] % formerPartitionSize;
+        unsigned long entrieOffset = (entrieInBlock / partitionSize);
+        if (entrieStart[entrieOffset] == -1) {
+            entrieStart[entrieOffset] = i;
+            if (i > entries.start) {
+                entrieEnd[offsetStarted] = i;
+            }
+            offsetStarted = entrieOffset;
+        }
+        if (i == entries.end - 1) {
+            entrieEnd[offsetStarted] = i + 1;
         }
     }
 }
@@ -319,6 +452,9 @@ void DKTree::checkArgument(unsigned long a, std::string functionName) {
     if (a >= firstFreeColumn) {
         error << functionName << ": invalid argument " << a << ", position not occupied in matrix\n";
         throw std::invalid_argument(error.str());
+    } else if (a < 0) {
+        error << functionName << ": invalid argument " << a << ", position does not exist\n";
+        throw std::invalid_argument(error.str());
     } else {
         for (auto &fc: freeColumns) {
             if (fc == a) {
@@ -342,6 +478,21 @@ void DKTree::traverseToFirst0OrEndOfTTree(unsigned long row, unsigned long colum
             unsigned long positionOfFirst = ttree->rank1(position + 1) * k2;
             position = positionOfFirst + offset;
         }
+    }
+}
+
+void DKTree::sortAndCheckVector(vector<unsigned long> &elements) {
+    if (elements.empty()) {
+        std::stringstream error;
+        error << "sortAndCheckVector: invalid argument, empty input vector \n";
+        throw std::invalid_argument(error.str());
+    }
+    // sort and delete doubles
+    sort(elements.begin(), elements.end());
+    elements.erase(unique(elements.begin(), elements.end()), elements.end());
+    std::string functionname = "reportAllEdges";
+    for (auto elemt:elements) {
+        checkArgument(elemt, functionname);
     }
 }
 
