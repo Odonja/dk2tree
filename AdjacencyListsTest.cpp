@@ -7,6 +7,20 @@
 #include "AdjacencyLists.h"
 #include <iostream>
 
+void validate(const AdjacencyLists &a) {
+    // Test that all adjacency lists are in increasing order
+    for (unsigned long k = 0; k < a.totalSize(); k++) {
+        try {
+            auto neighbours = a.neighbours(k);
+            for (unsigned long i = 1; i < neighbours.size(); i++) {
+                ASSERT_LT(neighbours[i-1], neighbours[i]);
+            }
+        } catch (invalid_argument &i) {
+            // This column was not in use
+        }
+    }
+}
+
 TEST(AdjLists, EmptyGraph) {
     AdjacencyLists a;
     ASSERT_EQ(a.totalSize(), 0);
@@ -14,6 +28,7 @@ TEST(AdjLists, EmptyGraph) {
     ASSERT_THROW(a.reportEdge(0, 1), invalid_argument);
     ASSERT_THROW(a.addEdge(1, 1), invalid_argument);
     ASSERT_THROW(a.removeEdge(1, 0), invalid_argument);
+    validate(a);
 }
 
 TEST(AdjLists, Graph1) {
@@ -25,6 +40,7 @@ TEST(AdjLists, Graph1) {
     ASSERT_TRUE(a.reportEdge(0, 0));
     a.removeEdge(0, 0);
     ASSERT_FALSE(a.reportEdge(0, 0));
+    validate(a);
 }
 
 TEST(AdjLists, Graph2) {
@@ -39,6 +55,7 @@ TEST(AdjLists, Graph2) {
     ASSERT_FALSE(a.reportEdge(0, 0));
     ASSERT_FALSE(a.reportEdge(1, 1));
     ASSERT_THROW(a.reportEdge(0, 2), invalid_argument);
+    validate(a);
 }
 
 TEST(AdjLists, LargeGraph) {
@@ -65,6 +82,7 @@ TEST(AdjLists, LargeGraph) {
     }
     ASSERT_THROW(a.addEdge(0, size), invalid_argument);
     ASSERT_THROW(a.addEdge(size, 0), invalid_argument);
+    validate(a);
 }
 
 TEST(AdjLists, LargeGraphWithRemovals) {
@@ -94,4 +112,5 @@ TEST(AdjLists, LargeGraphWithRemovals) {
     ASSERT_FALSE(a.reportEdge(0, toDelete));
     ASSERT_FALSE(a.reportEdge(toDelete, 0));
     ASSERT_FALSE(a.reportEdge(toDelete, toDelete));
+    validate(a);
 }

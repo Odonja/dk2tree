@@ -23,9 +23,9 @@ public:
 
     ~AdjacencyLists();
 
-    unsigned long totalSize();
+    unsigned long totalSize() const;
 
-    unsigned long usedSize();
+    unsigned long usedSize() const;
 
     void addEdge(unsigned long a, unsigned long b);
 
@@ -35,10 +35,12 @@ public:
 
     void deleteEntry(unsigned long a);
 
-    bool reportEdge(unsigned long a, unsigned long b);
+    bool reportEdge(unsigned long a, unsigned long b) const;
+
+    const vector<unsigned long> neighbours(unsigned long a) const;
 
 private:
-    void checkArgument(unsigned long k, string functionName);
+    void checkArgument(unsigned long k, string functionName) const;
 };
 
 
