@@ -237,7 +237,6 @@ namespace {
     }
 
 
-
     TEST(DKTreeTest, LargeRandomTest) {
         unsigned long n = 100;
         unsigned long m = 5000;
@@ -374,7 +373,7 @@ namespace {
     }
 
     TEST(DKTreeTest, addAndDeleteLeftmiddleEdgesOthersStayTrue) {
-        std::cout << "addAndDeleteEntryOthersStayTrue test\n";
+        std::cout << "addAndDeleteLeftmiddleEdgesOthersStayTrue test\n";
         DKTree dktree;
         for (unsigned long i = 0; i < 16; i++) {
             dktree.insertEntry();
@@ -401,7 +400,7 @@ namespace {
         dktree.deleteEntry(6);
         dktree.printtt();
 
-        vector<unsigned long> validEntries{0, 1, 2, 3, 4, 5,  7, 8, 9, 10, 11, 12, 13, 14, 15};
+        vector<unsigned long> validEntries{0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15};
         vector<std::pair<unsigned long, unsigned long>> findings = dktree.reportAllEdges(validEntries, validEntries);
         for (auto finding:findings) {
             std::cout << "<" << finding.first << ", " << finding.second << ">, ";
@@ -427,6 +426,29 @@ namespace {
         ASSERT_EQ(11, findings[8].first);
         ASSERT_EQ(4, findings[8].second);
 
+    }
+
+    TEST(DKTreeTest, addEdgeAfterDeletingEdgeGivesDeletedEdge) {
+        std::cout << "addEdgeAfterDeletingEdgeGivesDeletedEdge test\n";
+        DKTree dktree;
+        for (unsigned long i = 0; i < 16; i++) {
+            dktree.insertEntry();
+        }
+        dktree.deleteEntry(6);
+        unsigned long newEntry = dktree.insertEntry();
+        ASSERT_EQ(6, newEntry);
+    }
+
+    TEST(DKTreeTest, addEdgeAfterDeletingMultipleEdgesGivesDeletedEdgeWithLowestIndex) {
+        std::cout << "addEdgeAfterDeletingMultipleEdgesGivesDeletedEdgeWithLowestIndex test\n";
+        DKTree dktree;
+        for (unsigned long i = 0; i < 16; i++) {
+            dktree.insertEntry();
+        }
+        dktree.deleteEntry(6);
+        dktree.deleteEntry(4);
+        unsigned long newEntry = dktree.insertEntry();
+        ASSERT_EQ(4, newEntry);
     }
 
 }
