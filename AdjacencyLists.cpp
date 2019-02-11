@@ -58,11 +58,11 @@ AdjacencyLists::AdjacencyLists(unsigned long size) :
 
 AdjacencyLists::~AdjacencyLists() = default;
 
-unsigned long AdjacencyLists::totalSize() {
+unsigned long AdjacencyLists::totalSize() const {
     return size;
 }
 
-unsigned long AdjacencyLists::usedSize() {
+unsigned long AdjacencyLists::usedSize() const {
     return size - freeColumns.size();
 }
 
@@ -99,13 +99,13 @@ void AdjacencyLists::deleteEntry(unsigned long a) {
     insert(freeColumns, a);
 }
 
-bool AdjacencyLists::reportEdge(unsigned long a, unsigned long b) {
+bool AdjacencyLists::reportEdge(unsigned long a, unsigned long b) const {
     checkArgument(a, "reportEdge");
     checkArgument(b, "reportEdge");
     return contains(lists[a], b);
 }
 
-void AdjacencyLists::checkArgument(unsigned long k, std::string functionName) {
+void AdjacencyLists::checkArgument(unsigned long k, std::string functionName) const {
     // Check that `k` is really a column/row in the graph
     if (k >= size) {
         std::stringstream error;
@@ -116,4 +116,9 @@ void AdjacencyLists::checkArgument(unsigned long k, std::string functionName) {
         error << functionName << ": invalid argument " << k << ", this column is unused";
         throw std::invalid_argument(error.str());
     }
+}
+
+const vector<unsigned long> AdjacencyLists::neighbours(unsigned long a) const {
+    checkArgument(a, "neighbours");
+    return lists[a];
 }
