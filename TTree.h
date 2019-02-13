@@ -40,6 +40,23 @@ struct InternalNode;
 struct LeafNode;
 struct TTree;
 
+struct Nesbo {
+public:
+    TTree *node;
+    unsigned long index;
+    unsigned long size;
+    unsigned long bitsBefore;
+    unsigned long onesBefore;
+
+    Nesbo(TTree *node, unsigned long index, unsigned long size,
+          unsigned long bitsBefore, unsigned long onesBefore) :
+            node(node),
+            index(index),
+            size(size),
+            bitsBefore(bitsBefore),
+            onesBefore(onesBefore) {}
+};
+
 /**
  * A struct for the internal nodes of the tree
  * This contains a list of Entries of the form <b, o, P>
@@ -276,21 +293,23 @@ struct TTree {
      * Note that P is strictly just a pointer to a `TTreeNode`, as defined by the `entry` struct
      * But the union is always of the `LeafNode` variant.
      */
-    InternalNode::Entry findLeaf(unsigned long);
+    InternalNode::Entry findLeaf(unsigned long, vector<Nesbo> *path = nullptr);
+
+    InternalNode::Entry findLeaf2(unsigned long, vector<Nesbo> &);
 
     /**
      * Performs the `rank` operation on the bitvector represented by this tree
      * @param n  an integer with 0 <= n < (numbers of bits in the tree)
      * @return the number of 1-bits in the tree up to position n
      */
-    unsigned long rank1(unsigned long);
+    unsigned long rank1(unsigned long, vector<Nesbo> *path = nullptr);
 
     /**
      * Performs the `access` operation on this subtree
      * @param n the index of a bit in the `TTree`
      * @return the value of the `n`-th bit in the tree
      */
-    bool access(unsigned long);
+    bool access(unsigned long, vector<Nesbo> *path = nullptr);
 
     /**
      * Sets the bit at position n to the value of b
@@ -299,7 +318,7 @@ struct TTree {
      * @return true if this bit changed, e.g.
      *      if the previous value of the bit was unequal to b
      */
-    bool setBit(unsigned long, bool);
+    bool setBit(unsigned long, bool, vector<Nesbo> *path = nullptr);
 
     /**
      * Gets the total number of bits covered by this subtree
@@ -328,16 +347,16 @@ struct TTree {
      *
      * @return the new root if the tree's root changed, nullptr otherwise
      */
-    TTree *insertBlock(long unsigned);
+    TTree *insertBlock(long unsigned, vector<Nesbo> *path = nullptr);
 
     /**
      * Deletes a block of k^2 bits at the specified position
      *
      * @return the new root if the tree's root changed, nullptr otherwise
      */
-    TTree *deleteBlock(long unsigned);
+    TTree *deleteBlock(long unsigned, vector<Nesbo> *path = nullptr);
 
-  private:
+private:
     /**
      * Inserts the given number of bits (set to zero) at the given position in the tree
      *
@@ -353,7 +372,8 @@ struct TTree {
      * guaranteed when only a single block is inserted. That is why this method
      * is private, and insertBlock is public.
      */
-    TTree *insertBits(long unsigned, long unsigned);
+    TTree *
+    insertBits(long unsigned, long unsigned, vector<Nesbo> *path = nullptr);
 
     /**
      * Deletes the given number of bits in the subtree, assuming they are all in the
@@ -371,7 +391,8 @@ struct TTree {
      * guaranteed when only a single block is deleted. That is why this method
      * is private, and deleteBlock is public.
      */
-    TTree *deleteBits(long unsigned, long unsigned);
+    TTree *
+    deleteBits(long unsigned, long unsigned, vector<Nesbo> *path = nullptr);
 
     /**
      * Checks if this node satisfies the maximum size for an internal node

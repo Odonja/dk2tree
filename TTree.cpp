@@ -79,39 +79,108 @@ Record TTree::findChild(unsigned long n) {
     throw std::range_error("TTree: index out of range");
 }
 
-InternalNode::Entry TTree::findLeaf(unsigned long n) {
-    auto *current = this;
-    unsigned long bitsBefore = 0;
-    unsigned long onesBefore = 0;
+InternalNode::Entry TTree::findLeaf(unsigned long n, vector<Nesbo> *path) {
+    if (path == nullptr) {
+        auto *current = this;
+        unsigned long bitsBefore = 0;
+        unsigned long onesBefore = 0;
+        while (!current->isLeaf) {
+            auto record = current->findChild(n - bitsBefore);
+            bitsBefore += record.b;
+            onesBefore += record.o;
+            current = current->node.internalNode->entries[record.i].P;
+        }
+        return {bitsBefore, onesBefore, current};
+    } else {
+        return findLeaf2(n, *path);
+    }
+}
+
+InternalNode::Entry TTree::findLeaf2(unsigned long n, vector<Nesbo> &path) {
+    TTree *current = nullptr;
+    unsigned long bitsBefore = 0, onesBefore = 0;
+    if (path.empty()) {
+        // If the path is empty, we have to do a regular findLeaf and store the
+        // results in the path vector
+        current = this;
+        bitsBefore = 0;
+        onesBefore = 0;
+    } else {
+        // Start at the end of the path (which is a leaf), and move up until we
+        // reach the subtree that also contains the desired bit
+        unsigned long k = path.size() - 1;
+        Nesbo nesbo = path[k];
+        // While the subtree nested at `nesbo.node` is entirely before, or
+        // entirely after the bit we are looking for...
+        while (n < nesbo.bitsBefore || nesbo.bitsBefore + nesbo.size <= n) {
+            // Go `up` one level if possible. Else, we are at the root so do a
+            // regular search from there
+            path.pop_back();
+            if (k == 0) {
+                current = nesbo.node;
+                break;
+            }
+            k -= 1;
+            nesbo = path[k];
+        };
+
+//        if (!path.empty()) {
+//            printf("starting at depth %lu\n", path.size());
+//        }
+
+
+        // If we didn't exit early, then set the start of the search path to the
+        // last entry of path that still exists
+        if (current == nullptr) {
+            current = nesbo.node->node.internalNode->entries[nesbo.index].P;
+            bitsBefore = nesbo.bitsBefore;
+            onesBefore = nesbo.onesBefore;
+        }
+    }
+    // Now, we do a regular search from `current` and add the intermediate
+    // nodes we visit to `path`
     while (!current->isLeaf) {
         auto record = current->findChild(n - bitsBefore);
         bitsBefore += record.b;
         onesBefore += record.o;
-        current = current->node.internalNode->entries[record.i].P;
+        auto next = current->node.internalNode->entries[record.i];
+        path.emplace_back(current, record.i, next.b, bitsBefore, onesBefore);
+        current = next.P;
     }
+
     return {bitsBefore, onesBefore, current};
 }
 
-unsigned long TTree::rank1(unsigned long n) {
-    auto entry = findLeaf(n);
+unsigned long TTree::rank1(unsigned long n, vector<Nesbo> *path) {
+    auto entry = findLeaf(n, path);
     auto &bv = entry.P->node.leafNode->bv;
     return entry.o + bv.rank1(n - entry.b);
 }
 
-bool TTree::access(unsigned long n) {
-    auto entry = findLeaf(n);
+bool TTree::access(unsigned long n, vector<Nesbo> *path) {
+    auto entry = findLeaf(n, path);
     return entry.P->node.leafNode->bv[n - entry.b];
 }
 
-bool TTree::setBit(unsigned long n, bool b) {
+bool TTree::setBit(unsigned long n, bool b, vector<Nesbo> *path) {
     // Find the leaf node that contains this bit
-    auto entry = findLeaf(n);
+    auto entry = findLeaf(n, path);
     BitVector &bv = entry.P->node.leafNode->bv;
     bool changed = bv.set(n - entry.b, b);
 
     if (changed) {
         // Change the one-counters all the way up from this leaf
-        entry.P->updateCounters(0, b ? 1ul : -1ul);
+        long d = b ? 1 : -1;
+        entry.P->updateCounters(0, d);
+        if (path != nullptr && !path->empty()) {
+            for (auto &i : *path) {
+                // For each entry where `bitsBefore` includes the bit we changed,
+                // we must also increase/decrease the value of `onesBefore` by 1
+                if (n < i.bitsBefore) {
+                    i.onesBefore += d;
+                }
+            }
+        }
     }
     return changed;
 }
@@ -131,8 +200,9 @@ void TTree::updateCounters(long dBits, long dOnes) {
     }
 }
 
-TTree *TTree::insertBits(long unsigned index, long unsigned count) {
-    auto entry = findLeaf(index);
+TTree *TTree::insertBits(long unsigned index, long unsigned count,
+                         vector<Nesbo> *path) {
+    auto entry = findLeaf(index, path);
     auto leaf = entry.P;
     auto &bv = leaf->node.leafNode->bv;
     bv.insert(index - entry.b, count);
@@ -142,8 +212,9 @@ TTree *TTree::insertBits(long unsigned index, long unsigned count) {
     return leaf->checkSizeUpper();
 }
 
-TTree *TTree::deleteBits(long unsigned index, long unsigned count) {
-    auto entry = findLeaf(index);
+TTree *TTree::deleteBits(long unsigned index, long unsigned count,
+                         vector<Nesbo> *path) {
+    auto entry = findLeaf(index, path);
     auto leaf = entry.P;
     auto &bv = leaf->node.leafNode->bv;
     long unsigned start = index - entry.b;
@@ -154,12 +225,12 @@ TTree *TTree::deleteBits(long unsigned index, long unsigned count) {
     return leaf->checkSizeLower();
 }
 
-TTree *TTree::insertBlock(long unsigned index) {
-    return this->insertBits(index, block);
+TTree *TTree::insertBlock(long unsigned index, vector<Nesbo> *path) {
+    return this->insertBits(index, block, path);
 }
 
-TTree *TTree::deleteBlock(long unsigned index) {
-    return this->deleteBits(index, block);
+TTree *TTree::deleteBlock(long unsigned index, vector<Nesbo> *path) {
+    return this->deleteBits(index, block, path);
 }
 
 unsigned long TTree::depth() {
