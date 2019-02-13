@@ -3,14 +3,25 @@
 //
 
 #include <iostream>
-#include <cmath>
 #include <sstream>
 
 #include "DKTree.h"
 
 using namespace std;
 
-DKTree::DKTree() : ttree(new TTree()), ltree(new TTree()), freeColumns(), firstFreeColumn(0), matrixSize(pow(k, 4)) {
+unsigned long pow(unsigned long a, unsigned long b) {
+    unsigned long result = 1;
+    while (b != 0) {
+        if (b % 2 != 0) {
+            result *= a;
+        }
+        b >>= 1;
+        a *= a;
+    }
+    return result;
+}
+
+DKTree::DKTree() : ttree(new TTree()), ltree(new TTree()), freeColumns(), firstFreeColumn(0), matrixSize(pow(k, 4ul)) {
     ttree->insertBlock(0);
 }
 
