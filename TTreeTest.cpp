@@ -269,6 +269,12 @@ TEST(TTreeTest, AccessSetBit2) {
  * Tests the insert() and delete() functions
  */
 TEST(TTreeTest, InsertDelete) {
+    // This test assumes that B is not too small. Else, we skip this test
+    if (B <= 2 * block) {
+        printf("B = %u and block = %u means skipping TTreeTest::InsertDelete\n", B, block);
+        return;
+    }
+
     auto *root = new TTree(B);
     root->setBit(B / 2 - 1, true);
     root->setBit(B / 2, true);
