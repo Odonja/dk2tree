@@ -10,7 +10,8 @@
 
 /// The three main parameters for the TTree and LTree representation
 static const unsigned int k = 2; // The `k` in the k2-tree
-static const unsigned int block = k * k; // The number of bits in one block of the bit vector
+static const unsigned int block =
+        k * k; // The number of bits in one block of the bit vector
 static const unsigned int B = 8; // The maximum size (in bits) of a leaf bitvector
 
 /// The maximum/minimum number of children/blocks an internal node/leaf node

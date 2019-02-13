@@ -583,7 +583,8 @@ TTree *TTree::splitInternal() {
 //        printf("splitting internal node != root\n");
         parent->node.internalNode->entries[indexInParent].b -= d_b;
         parent->node.internalNode->entries[indexInParent].o -= d_o;
-        parent->node.internalNode->insert(indexInParent + 1, {d_b, d_o, newNode});
+        parent->node.internalNode->insert(indexInParent + 1,
+                                          {d_b, d_o, newNode});
         return parent->checkSizeUpper();
     }
 }
