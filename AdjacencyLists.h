@@ -39,6 +39,8 @@ public:
 
     const vector<unsigned long> neighbours(unsigned long a) const;
 
+    unsigned long memoryUsage();
+
 private:
     void checkArgument(unsigned long k, string functionName) const;
 };

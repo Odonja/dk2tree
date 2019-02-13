@@ -80,6 +80,9 @@ TEST(AdjLists, LargeGraph) {
             ASSERT_EQ(edge, a.reportEdge(i, j));
         }
     }
+
+    printf("size: %lu\n", a.memoryUsage());
+
     ASSERT_THROW(a.addEdge(0, size), invalid_argument);
     ASSERT_THROW(a.addEdge(size, 0), invalid_argument);
     validate(a);

@@ -357,6 +357,8 @@ struct TTree {
      */
     TTree *deleteBlock(long unsigned, vector<Nesbo> *path = nullptr);
 
+    unsigned long memoryUsage();
+
 private:
     /**
      * Inserts the given number of bits (set to zero) at the given position in the tree

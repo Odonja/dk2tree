@@ -653,3 +653,19 @@ TTree *TTree::mergeLeaf() {
     parent->node.internalNode->remove(idx + 1);
     return parent->checkSizeLower();
 }
+
+unsigned long TTree::memoryUsage() {
+    unsigned long result = sizeof(TTree);
+    if (isLeaf) {
+        result += node.leafNode->bv.memoryUsage();
+    } else {
+        result += sizeof(InternalNode);
+        auto &entries = node.internalNode->entries;
+        for (auto &entry : entries) {
+            if (entry.P != nullptr) {
+                result += entry.P->memoryUsage();
+            }
+        }
+    }
+    return result;
+}

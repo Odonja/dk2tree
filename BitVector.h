@@ -117,6 +117,8 @@ struct BitVector {
         recompute();
     }
 
+    unsigned long memoryUsage();
+
 private:
     /**
      * Private method to re-compute all the values of block_counts from a certain

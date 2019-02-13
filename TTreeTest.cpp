@@ -342,6 +342,8 @@ TEST(TTreeTest, BPlusTest0) {
         EXPECT_EQ(changed, true);
     }
 
+    printf("size: %lu\n", root->memoryUsage());
+
     ASSERT_TRUE(validate(root));
     ASSERT_TRUE(validateSize(root));
     ASSERT_TRUE(treeEqualsVec(root, bv));
@@ -373,6 +375,8 @@ TEST(TTreeTest, BPlusTest1) {
             ASSERT_TRUE(treeEqualsVec(root, ref, lo, hi));
         }
     }
+
+    printf("size: %lu\n", root->memoryUsage());
 
     ASSERT_TRUE(treeEqualsVec(root, ref));
 
@@ -414,6 +418,8 @@ TEST(TTreeTest, BPlusTest2) {
             ASSERT_TRUE(treeEqualsVec(root, ref, lo, hi));
         }
     }
+
+    printf("size: %lu\n", root->memoryUsage());
 
     ASSERT_TRUE(treeEqualsVec(root, ref));
 
@@ -465,6 +471,9 @@ TEST(TTreeTest, BPlusTest3) {
             ref[i + j] = true;
         }
     }
+
+    printf("size: %lu\n", root->memoryUsage());
+
     ASSERT_TRUE(treeEqualsVec(root, ref));
 
     for (unsigned long i = block; i <= len; i += block) {
