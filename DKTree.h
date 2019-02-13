@@ -114,6 +114,8 @@ public:
 
     DKTree(const DKTree &) = delete; // not allowed to use the copy constructor
 
+    unsigned long memoryUsage();
+
 private:
     /**
     * prints the leaf nodes of the input tree

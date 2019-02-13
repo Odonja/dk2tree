@@ -251,6 +251,9 @@ namespace {
             unsigned long r = i / n;
             tree.addEdge(r, c);
         }
+
+        printf("size: %lu\n", tree.memoryUsage());
+
         for (unsigned long i = 0; i < n * n; i++) {
             bool exists = (i % step == 0);
             unsigned long c = i % n;

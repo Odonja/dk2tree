@@ -555,3 +555,13 @@ void DKTree::deleteBlockLtree(unsigned long position) {
     }
     lPath.clear();
 }
+
+unsigned long DKTree::memoryUsage() {
+    unsigned long result = sizeof(DKTree);
+    result += ttree->memoryUsage();
+    result += ltree->memoryUsage();
+    result += tPath.capacity() * sizeof(Nesbo);
+    result += lPath.capacity() * sizeof(Nesbo);
+    result += freeColumns.capacity() * sizeof(unsigned long);
+    return result;
+}
