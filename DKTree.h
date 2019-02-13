@@ -37,6 +37,8 @@ private:
 
     TTree *ttree; // the tree whose leaves contain the internal nodes of the k2 tree
     TTree *ltree; // the tree whose leaves contain the leave nodes of the k2 tree
+    vector<Nesbo> tPath;
+    vector<Nesbo> lPath;
     std::vector<unsigned long> freeColumns; // contains the entries in the matrix  below firstFreeColumn that are not in use
     unsigned long firstFreeColumn; // the lowest index above the used entries
     unsigned long matrixSize; // current size of the matrix, is a power of k
