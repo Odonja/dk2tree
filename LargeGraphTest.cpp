@@ -10,7 +10,7 @@
 #include <functional>
 #include <thread>
 
-std::default_random_engine generator;
+std::default_random_engine generator((unsigned long) std::chrono::steady_clock::now().time_since_epoch().count());
 std::uniform_real_distribution<double> distribution(0.0, 1.0);
 
 static auto randomUniform = std::bind(distribution, generator);
