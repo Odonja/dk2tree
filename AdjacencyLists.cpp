@@ -4,47 +4,7 @@
 
 #include "AdjacencyLists.h"
 #include <sstream>
-
-unsigned long binarySearch(const vector<unsigned long> &v, unsigned long k, bool *found) {
-    *found = false;
-    unsigned long lo = 0, hi = v.size();
-    while (lo < hi) {
-        unsigned long mid = (lo + hi) / 2;
-        if (v[mid] == k) {
-            *found = true;
-            return mid;
-        } else if (v[mid] < k) {
-            lo = mid + 1;
-        } else {
-            hi = mid;
-        }
-    }
-    // lo == hi == the index where the element would be if it was contained in the vector
-    return lo;
-}
-
-bool contains(const vector<unsigned long> &v, unsigned long k) {
-    bool found = false;
-    binarySearch(v, k, &found);
-    return found;
-}
-
-unsigned long insert(vector<unsigned long> &v, unsigned long k) {
-    bool found = false;
-    unsigned long idx = binarySearch(v, k, &found);
-    if (!found) {
-        v.insert(v.begin() + idx, k);
-    }
-    return idx;
-}
-
-void remove(vector<unsigned long> &v, unsigned long k) {
-    bool found = false;
-    unsigned long idx = binarySearch(v, k, &found);
-    if (found) {
-        v.erase(v.begin() + idx);
-    }
-}
+#include "BinarySearch.h"
 
 AdjacencyLists::AdjacencyLists() :
     size(0),
