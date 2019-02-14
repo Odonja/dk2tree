@@ -107,5 +107,5 @@ unsigned long BitVector::countBlocks(unsigned long lo, unsigned long hi) {
 }
 
 unsigned long BitVector::memoryUsage() {
-    return sizeof(BitVector) + data.capacity() / 8 + block_counts.capacity();
+    return sizeof(BitVector) + (data.size() + 7) / 8 + block_counts.size();
 }

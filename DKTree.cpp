@@ -562,8 +562,8 @@ unsigned long DKTree::memoryUsage() {
     unsigned long result = sizeof(DKTree);
     result += ttree->memoryUsage();
     result += ltree->memoryUsage();
-    result += tPath.capacity() * sizeof(Nesbo);
-    result += lPath.capacity() * sizeof(Nesbo);
-    result += freeColumns.capacity() * sizeof(unsigned long);
+    result += tPath.size() * sizeof(Nesbo);
+    result += lPath.size() * sizeof(Nesbo);
+    result += freeColumns.size() * sizeof(unsigned long);
     return result;
 }

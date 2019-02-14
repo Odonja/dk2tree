@@ -85,10 +85,10 @@ const vector<unsigned long> AdjacencyLists::neighbours(unsigned long a) const {
 
 unsigned long AdjacencyLists::memoryUsage() {
     unsigned long result = sizeof(AdjacencyLists);
-    result += lists.capacity() * sizeof(vector<unsigned long>);
-    result += freeColumns.capacity() * sizeof(unsigned long);
+    result += lists.size() * sizeof(vector<unsigned long>);
+    result += freeColumns.size() * sizeof(unsigned long);
     for (auto &v : lists) {
-        result += v.capacity() * sizeof(unsigned long);
+        result += v.size() * sizeof(unsigned long);
     }
     return result;
 }

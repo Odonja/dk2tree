@@ -79,10 +79,10 @@ const vector<unsigned long> AdjacencyMatrix::neighbours(unsigned long a) const {
 
 unsigned long AdjacencyMatrix::memoryUsage() {
     auto result = sizeof(AdjacencyMatrix);
-    result += freeColumns.capacity() * sizeof(unsigned long);
-    result += matrix.capacity() * sizeof(vector<bool>);
+    result += freeColumns.size() * sizeof(unsigned long);
+    result += matrix.size() * sizeof(vector<bool>);
     for (const auto &list : matrix) {
-        result += list.capacity() / 8;
+        result += (list.size() + 7) / 8;
     }
     return result;
 }
