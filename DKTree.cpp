@@ -476,16 +476,18 @@ DKTree::calculateOffset(const unsigned long row, const unsigned long column, con
 }
 
 void DKTree::checkArgument(unsigned long a, std::string functionName) {
-    std::stringstream error;
     if (a >= firstFreeColumn) {
+        std::stringstream error;
         error << functionName << ": invalid argument " << a << ", position not occupied in matrix\n";
         throw std::invalid_argument(error.str());
     } else if (a < 0) {
+        std::stringstream error;
         error << functionName << ": invalid argument " << a << ", position does not exist\n";
         throw std::invalid_argument(error.str());
     } else {
         for (auto &fc: freeColumns) {
             if (fc == a) {
+                std::stringstream error;
                 error << functionName << ": invalid argument " << a << ", position was deleted from matrix\n";
                 throw std::invalid_argument(error.str());
             }
