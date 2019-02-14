@@ -52,17 +52,20 @@ void largeTest(unsigned long size, double p) {
     t.stop();
     printf("Inserting entries: %f seconds\n", t.read());
     t.start();
+    unsigned long n = 0;
     for (unsigned long i = 0; i < size; i++) {
 //        printf("%lu\n", i);
         for (unsigned long j = 0; j < size; j++) {
             if (bernoulli(p)) {
                 g.addEdge(i, j);
+                n++;
             }
         }
     }
     t.stop();
     printf("Adding edges: %f seconds\n", t.read());
     printf("Size in memory: %lu bytes\n", g.memoryUsage());
+    printf("Edges: %lu\n", n);
 }
 
 #endif // DK2TREE_LARGE_GRAPH_TEST
