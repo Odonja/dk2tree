@@ -8,6 +8,7 @@
 #include "TTree.h"
 #include <cstdio>
 #include <iostream>
+#include "gtest/gtest.h"
 
 void print(TTree *tree, unsigned long depth = 0) {
     std::string prefix;

@@ -6,6 +6,7 @@
 #define BIT_VECTOR_TEST
 
 #include "BitVector.h"
+#include "gtest/gtest.h"
 
 bool validate(BitVector &bv) {
     unsigned long n = bv.size(), nb = (n + BLOCK_SIZE - 1) / BLOCK_SIZE;
