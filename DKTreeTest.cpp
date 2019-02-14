@@ -4,11 +4,11 @@
 //
 // Created by anneke on 05/02/19.
 //
-
-#include "DKTree.h"
 #include <cstdio>
-#include "gtest/gtest.h"
 #include <iostream>
+#include "gtest/gtest.h"
+#include "stdlib.h"
+#include "DKTree.h"
 
 using namespace std;
 
@@ -452,6 +452,123 @@ namespace {
         dktree.deleteEntry(4);
         unsigned long newEntry = dktree.insertEntry();
         ASSERT_EQ(4, newEntry);
+    }
+
+    TEST(DKTreeTest, testpairsort){
+        vector<std::pair<unsigned long, unsigned long>> allEdges;
+        allEdges.push_back(std::pair<unsigned long, unsigned long>(6, 6));
+        allEdges.push_back(std::pair<unsigned long, unsigned long>(6, 2));
+        allEdges.push_back(std::pair<unsigned long, unsigned long>(4, 8));
+        allEdges.push_back(std::pair<unsigned long, unsigned long>(4, 9));
+        sort(allEdges.begin(), allEdges.end());
+        for (auto finding:allEdges) {
+            std::cout << "<" << finding.first << ", " << finding.second << ">, ";
+        }
+        std::pair<unsigned long, unsigned long> a (4, 9);
+        ASSERT_EQ(a, allEdges[1]);
+    }
+
+    void graphWithXentriesRandomSet(unsigned long x){
+        DKTree dktree;
+        vector<unsigned long> insertedEntries;
+        for (unsigned long i = 0; i < x; i++) {
+            dktree.insertEntry();
+            insertedEntries.push_back(i);
+        }
+        std::cout <<  "graph made \n";
+        vector<std::pair<unsigned long, unsigned long>> allEdges;
+        for (unsigned long i = 0; i < x; i++) {
+            for (unsigned long j = 0; j < x; j++) {
+                unsigned long random = rand() % 100;
+                if(random == 9){
+                    dktree.addEdge(i, j);
+                    allEdges.push_back(std::pair<unsigned long, unsigned long>(i, j));
+                }
+            }
+        }
+        int nrOfEdges = allEdges.size();
+        std::cout <<  nrOfEdges << " edges added\n";
+        vector<std::pair<unsigned long, unsigned long>> findings = dktree.reportAllEdges(insertedEntries, insertedEntries);
+        std::cout <<  "edges reported  \n";
+        sort(findings.begin(), findings.end());
+        std::cout <<  "edges sorted \n";
+        ASSERT_EQ(allEdges.size(), findings.size());
+        std::cout <<  "correct size \n";
+        for (unsigned long i = 0; i < nrOfEdges; i++) {
+            ASSERT_EQ(allEdges[i], findings[i]);
+        }
+    }
+
+    void graphWithXentriesRandomDeleteAndFind(unsigned long x){
+        DKTree dktree;
+        vector<unsigned long> insertedEntries;
+        for (unsigned long i = 0; i < x; i++) {
+            dktree.insertEntry();
+            insertedEntries.push_back(i);
+        }
+        std::cout <<  "graph made \n";
+        vector<std::pair<unsigned long, unsigned long>> allEdges;
+        for (unsigned long i = 0; i < x; i++) {
+            for (unsigned long j = 0; j < x; j++) {
+                unsigned long random = rand() % 100;
+                if(random == 9){
+                    dktree.addEdge(i, j);
+                    allEdges.push_back(std::pair<unsigned long, unsigned long>(i, j));
+                }
+            }
+        }
+        int nrOfEdges = allEdges.size();
+        std::cout <<  nrOfEdges << " edges added\n";
+        vector<std::pair<unsigned long, unsigned long>> findings = dktree.reportAllEdges(insertedEntries, insertedEntries);
+        std::cout <<  "edges reported  \n";
+        sort(findings.begin(), findings.end());
+        std::cout <<  "edges sorted \n";
+        ASSERT_EQ(allEdges.size(), findings.size());
+        std::cout <<  "correct size \n";
+        for (unsigned long i = 0; i < nrOfEdges; i++) {
+            ASSERT_EQ(allEdges[i], findings[i]);
+        }
+
+        unsigned long random = rand() % nrOfEdges;
+        int entryToBeDeleted = allEdges[random].first;
+        dktree.deleteEntry(entryToBeDeleted);
+        insertedEntries.erase(insertedEntries.begin()+entryToBeDeleted);
+        findings = dktree.reportAllEdges(insertedEntries, insertedEntries);
+        sort(findings.begin(), findings.end());
+        int i = 0;
+        for(auto edge: allEdges){
+            if(edge.first == entryToBeDeleted || edge.second == entryToBeDeleted){
+                ASSERT_FALSE(edge == findings[i]);
+            }else{
+                ASSERT_EQ(edge, findings[i]);
+                i++;
+            }
+        }
+    }
+
+    TEST(DKTreeTest, randomThousandGraph){
+        std::cout << "randomThousandGraph test\n";
+        graphWithXentriesRandomSet(1000);
+    }
+
+    TEST(DKTreeTest, randomThousandGraphDeleteEntry){
+        std::cout << "randomThousandGraphDeleteEntry test\n";
+        graphWithXentriesRandomDeleteAndFind(1000);
+    }
+
+    TEST(DKTreeTest, randomTenThousandGraph){
+        std::cout << "randomTenThousandGraph test\n";
+        graphWithXentriesRandomSet(10000);
+    }
+
+    TEST(DKTreeTest, randomTenThousandGraphDeleteEntry){
+        std::cout << "randomTenThousandGraphDeleteEntry test\n";
+        graphWithXentriesRandomDeleteAndFind(10000);
+    }
+
+    TEST(DKTreeTest, randomHundredThousandGraphDeleteEntry){
+        std::cout << "randomHundredThousandGraphDeleteEntry test\n";
+        graphWithXentriesRandomDeleteAndFind(100000);
     }
 
 }
