@@ -16,8 +16,7 @@ std::uniform_real_distribution<double> distribution(0.0, 1.0);
 static auto randomUniform = std::bind(distribution, generator);
 
 bool bernoulli(double p) {
-    static const auto MAX = double(RAND_MAX);
-    return double(randomUniform()) / MAX < p;
+    return randomUniform() < p;
 }
 
 class Timer {
