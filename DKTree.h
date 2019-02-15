@@ -116,6 +116,17 @@ public:
 
     unsigned long memoryUsage();
 
+    static DKTree *withSize(unsigned long size) {
+        unsigned long n = 1, power = 0;
+        while (n < size) {
+            power++;
+            n *= k;
+        }
+        auto result = new DKTree(power);
+        result->firstFreeColumn = size;
+        return result;
+    }
+
 private:
     /**
     * prints the leaf nodes of the input tree
