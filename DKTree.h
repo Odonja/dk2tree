@@ -119,10 +119,16 @@ public:
 
 private:
     /**
-    * prints the leaf nodes of the input tree
+    * prints the leaf nodes of the input TTree
     * @param tree the tree to be printed
     */
-    void printtree(TTree *tree, unsigned long depth = 0);
+    void printttree(TTree *tree, unsigned long depth = 0);
+
+    /**
+    * prints the leaf nodes of the input LTree
+    * @param tree the tree to be printed
+    */
+    void printltree(LTree *tree, unsigned long depth = 0);
 
     /**
     * Calculates the offset of a row and column in a block at iteration iteration

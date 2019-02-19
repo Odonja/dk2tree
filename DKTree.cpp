@@ -416,16 +416,15 @@ void DKTree::splitEntriesOnOffset(const VectorData &entries, const unsigned long
 
 void DKTree::printtt() {
     cout << "ttree: ";
-    printtree(ttree);
+    printttree(ttree);
     printf("\n");
     cout << "ltree:";
 
-//    TODO: implement printing LTree
-//    printtree(ltree);
-//    printf("\n");
+    printltree(ltree);
+    printf("\n");
 }
 
-void DKTree::printtree(TTree *tree, unsigned long depth) {
+void DKTree::printttree(TTree *tree, unsigned long depth) {
     std::string prefix;
     for (unsigned long i = 0; i < depth; i++) {
         prefix += "| ";
@@ -442,11 +441,32 @@ void DKTree::printtree(TTree *tree, unsigned long depth) {
             if (entry.P == nullptr) {
                 break;
             }
-            printtree(entry.P, depth + 1);
+            printttree(entry.P, depth + 1);
         }
     }
 }
 
+void DKTree::printltree(LTree *tree, unsigned long depth) {
+    std::string prefix;
+    for (unsigned long i = 0; i < depth; i++) {
+        prefix += "| ";
+    }
+    if (tree->isLeaf) {
+        auto &bv = tree->node.leafNode->bv;
+        printf("%s", prefix.c_str());
+        for (auto b : bv.data) {
+            printf("%i", (bool) b);
+        }
+
+    } else {
+        for (auto &entry : tree->node.internalNode->entries) {
+            if (entry.P == nullptr) {
+                break;
+            }
+            printltree(entry.P, depth + 1);
+        }
+    }
+}
 
 void DKTree::increaseMatrixSize() {
     const unsigned long FIRSTBIT = 0;
