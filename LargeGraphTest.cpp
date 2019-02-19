@@ -35,11 +35,7 @@ public:
 };
 
 template <typename G>
-void largeTest(unsigned long size, double p) {
-    auto m = (unsigned long) (size * size * p);
-
-    printf("Size: %lu, m: %lu\n", size, m);
-
+G* largeTest(unsigned long size, unsigned long m) {
     Timer t;
     t.start();
     G *g = G::withSize(size);
@@ -57,6 +53,7 @@ void largeTest(unsigned long size, double p) {
     unsigned long i = randRange(0, size);
     unsigned long j = randRange(0, size);
     printf("%i\n", g->reportEdge(i, j));
+    return g;
 }
 
 #endif // DK2TREE_LARGE_GRAPH_TEST

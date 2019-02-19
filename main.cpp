@@ -14,11 +14,13 @@ int main(int argc, char **argv) {
 
 void doLargeTests() {
     unsigned long size = 10000;
-    double p = 250.0 / size;
+    unsigned long m = size * 5;
+    printf("Size: %lu, m: %lu\n", size, m);
 //    printf("\nAdjacency matrix:\n");
-//    largeTest<AdjacencyMatrix>(size, p);
+//    largeTest<AdjacencyMatrix>(size, m);
     printf("\nAdjacency lists:\n");
-    largeTest<AdjacencyLists>(size, p);
+    largeTest<AdjacencyLists>(size, m);
     printf("\ndk2tree:\n");
-    largeTest<DKTree>(size, p);
+    auto tree = largeTest<DKTree>(size, m);
+    tree->printtt();
 }
