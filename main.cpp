@@ -7,7 +7,9 @@
 void doLargeTests();
 
 int main(int argc, char **argv) {
-    doLargeTests();
+//    doLargeTests();
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }
 
 void doLargeTests() {
