@@ -415,10 +415,10 @@ void DKTree::splitEntriesOnOffset(const VectorData &entries, const unsigned long
 
 
 void DKTree::printtt() {
-    cout << "ttree: ";
+    cout << "ttree:" << endl;
     printttree(ttree);
     printf("\n");
-    cout << "ltree:";
+    cout << "ltree:" << endl;
 
     printltree(ltree);
     printf("\n");
@@ -435,8 +435,9 @@ void DKTree::printttree(TTree *tree, unsigned long depth) {
         for (auto b : bv.data) {
             printf("%i", (bool) b);
         }
-
+        printf("\n");
     } else {
+        printf("%s (%lu bits, %lu ones)\n", prefix.c_str(), tree->node.internalNode->bits(), tree->node.internalNode->ones());
         for (auto &entry : tree->node.internalNode->entries) {
             if (entry.P == nullptr) {
                 break;
@@ -457,8 +458,9 @@ void DKTree::printltree(LTree *tree, unsigned long depth) {
         for (auto b : bv.data) {
             printf("%i", (bool) b);
         }
-
+        printf("\n");
     } else {
+        printf("%s (%lu bits)\n", prefix.c_str(), tree->node.internalNode->bits());
         for (auto &entry : tree->node.internalNode->entries) {
             if (entry.P == nullptr) {
                 break;
