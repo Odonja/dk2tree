@@ -21,11 +21,11 @@ unsigned long pow(unsigned long a, unsigned long b) {
     return result;
 }
 
-DKTree::DKTree() : ttree(new TTree()), ltree(new TTree()), freeColumns(), firstFreeColumn(0), matrixSize(pow(k, 4ul)) {
+DKTree::DKTree() : ttree(new TTree()), ltree(new LTree()), freeColumns(), firstFreeColumn(0), matrixSize(pow(k, 4ul)) {
     ttree->insertBlock(0);
 }
 
-DKTree::DKTree(unsigned long power) : ttree(new TTree()), ltree(new TTree()), freeColumns(), firstFreeColumn(0),
+DKTree::DKTree(unsigned long power) : ttree(new TTree()), ltree(new LTree()), freeColumns(), firstFreeColumn(0),
                                       matrixSize(pow(k, power)) {
     ttree->insertBlock(0);
 }
@@ -419,8 +419,10 @@ void DKTree::printtt() {
     printtree(ttree);
     printf("\n");
     cout << "ltree:";
-    printtree(ltree);
-    printf("\n");
+
+//    TODO: implement printing LTree
+//    printtree(ltree);
+//    printf("\n");
 }
 
 void DKTree::printtree(TTree *tree, unsigned long depth) {
@@ -535,7 +537,7 @@ void DKTree::insertBlockTtree(unsigned long position) {
 }
 
 void DKTree::insertBlockLtree(unsigned long position) {
-    TTree *newRoot = ltree->insertBlock(position, &lPath);
+    LTree *newRoot = ltree->insertBlock(position, &lPath);
     if (newRoot != nullptr) {
         ltree = newRoot;
     }
@@ -551,7 +553,7 @@ void DKTree::deleteBlockTtree(unsigned long position) {
 }
 
 void DKTree::deleteBlockLtree(unsigned long position) {
-    TTree *newRoot = ltree->deleteBlock(position, &lPath);
+    LTree *newRoot = ltree->deleteBlock(position, &lPath);
     if (newRoot != nullptr) {
         ltree = newRoot;
     }
@@ -563,7 +565,7 @@ unsigned long DKTree::memoryUsage() {
     result += ttree->memoryUsage();
     result += ltree->memoryUsage();
     result += tPath.size() * sizeof(Nesbo);
-    result += lPath.size() * sizeof(Nesbo);
+    result += lPath.size() * sizeof(LNesbo);
     result += freeColumns.size() * sizeof(unsigned long);
     return result;
 }

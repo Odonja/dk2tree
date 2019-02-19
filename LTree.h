@@ -2,69 +2,65 @@
 // Created by anneke on 18/12/18.
 //
 
-#ifndef DK2TREE_TTREE_H
-#define DK2TREE_TTREE_H
+#ifndef DK2TREE_LTREE_H
+#define DK2TREE_LTREE_H
 
 #include "BitVector.h"
 #include <utility>
 #include "parameters.cpp"
 
-/// Record type containing the number pf preceding bits and ones, and the
+/// LRecord type containing the number pf preceding bits, and the
 /// index of a child node in the parent's `entries` list
-struct Record {
+struct LRecord {
     unsigned long b;
-    unsigned long o;
     unsigned long i;
 };
 
 /// The three main structs forming the tree
-/// `TTree` represents one node in the tree, which contains a pointer to its
+/// `LTree` represents one node in the tree, which contains a pointer to its
 /// parent (or nullptr for the root) and the index in the parent,
-/// as well as either an InternalNode containing entries (b, o, P) or a LeafNode
+/// as well as either an LInternalNode containing entries (b, P) or a LLeafNode
 /// containing a BitVector
-struct InternalNode;
-struct LeafNode;
-struct TTree;
+struct LInternalNode;
+struct LLeafNode;
+struct LTree;
 
-struct Nesbo {
+struct LNesbo {
 public:
-    TTree *node;
+    LTree *node;
     unsigned long index;
     unsigned long size;
     unsigned long bitsBefore;
-    unsigned long onesBefore;
 
-    Nesbo(TTree *node, unsigned long index, unsigned long size,
-          unsigned long bitsBefore, unsigned long onesBefore) :
+    LNesbo(LTree *node, unsigned long index, unsigned long size,
+          unsigned long bitsBefore) :
             node(node),
             index(index),
             size(size),
-            bitsBefore(bitsBefore),
-            onesBefore(onesBefore) {}
+            bitsBefore(bitsBefore) {}
 };
 
 /**
  * A struct for the internal nodes of the tree
- * This contains a list of Entries of the form <b, o, P>
+ * This contains a list of Entries of the form <b, P>
  */
-struct InternalNode {
+struct LInternalNode {
     struct Entry {
         unsigned long b;
-        unsigned long o;
-        TTree *P;
+        LTree *P;
 
         Entry() :
-                b(0), o(0), P(nullptr) {}
+                b(0), P(nullptr) {}
 
-        explicit Entry(TTree *);
+        explicit Entry(LTree *);
 
         /// Construct Entry from the three fields
         /// This method is not unused, but is used as an initialiser list
-        Entry(unsigned long b, unsigned long o, TTree *P) :
-                b(b), o(o), P(P) {}
+        Entry(unsigned long b, LTree *P) :
+                b(b), P(P) {}
 
         /**
-         * This function is called in the destructor of `InternalNode`, to
+         * This function is called in the destructor of `LInternalNode`, to
          * delete the child nodes. It is not part of the destructor of `Entry`,
          * since that causes problems when the struct is used in methods such as
          * `findLeaf`
@@ -81,7 +77,7 @@ struct InternalNode {
     Entry entries[nodeSizeMax + 1];
 
     /// The default constructor creates an empty internal node
-    InternalNode() :
+    LInternalNode() :
             size(0),
             entries{Entry()} {}
 
@@ -91,15 +87,15 @@ struct InternalNode {
      * @param left the first child of this node
      * @param right the second child of this node
      * @param parent the parent node, which has this as its internal node
-     *        the left and right TTrees have their parent and indexInParent
+     *        the left and right LTrees have their parent and indexInParent
      *        set correctly as well
      */
-    InternalNode(TTree *left, TTree *right, TTree *parent = nullptr);
+    LInternalNode(LTree *left, LTree *right, LTree *parent = nullptr);
 
     /**
      * When an internal node is dropped, clear the entries it points to
      */
-    ~InternalNode() {
+    ~LInternalNode() {
         for (auto &entry : entries) {
             entry.remove();
         }
@@ -110,12 +106,6 @@ struct InternalNode {
      * b-parts of the entries
      */
     unsigned long bits();
-
-    /**
-     * Returns the total number of ones in this tree, by summing up the
-     * o-parts of the entries
-     */
-    unsigned long ones();
 
     /**
      * Takes the leftmost entry out of this node and returns it
@@ -146,20 +136,20 @@ struct InternalNode {
 };
 
 /** A leaf node, which consists of a bitvector (represented by vector<bool>) */
-struct LeafNode {
+struct LLeafNode {
     BitVector bv;
 
     /**
      * Constructs a leaf with the given number of bits
      */
-    explicit LeafNode(unsigned long size) :
+    explicit LLeafNode(unsigned long size) :
             bv(size) {}
 
     /**
      * Constructs a leaf node from the given bit vector
      * @param bv the bitvector to be moved into this leaf node
      */
-    explicit LeafNode(BitVector bv) :
+    explicit LLeafNode(BitVector bv) :
             bv(std::move(bv)) {}
 
     /**
@@ -167,28 +157,22 @@ struct LeafNode {
      * @return the size in bits of this leaf
      */
     unsigned long bits();
-
-    /**
-     * Get the number of ones in this leaf node
-     * @return the number of bits in this leaf that are set to 1
-     */
-    unsigned long ones();
 };
 
-/** TTree is the struct representing a single node (leaf or internal) of the TTree */
+/** LTree is the struct representing a single node (leaf or internal) of the LTree */
 /** A single node is either an internal or leaf node, as indicated by the isLeaf value */
-struct TTree {
+struct LTree {
     bool isLeaf;
-    TTree *parent = nullptr;
+    LTree *parent = nullptr;
     unsigned long indexInParent = 0;
 
     union Node {
-        InternalNode *internalNode;
-        LeafNode *leafNode;
+        LInternalNode *internalNode;
+        LLeafNode *leafNode;
 
         Node();
 
-        Node(TTree *, TTree *);
+        Node(LTree *, LTree *);
 
         explicit Node(BitVector);
 
@@ -198,16 +182,16 @@ struct TTree {
     /**
      * Constructs an empty leaf node
      */
-    TTree() :
+    LTree() :
             isLeaf(true),
             node() {}
 
     /**
-     * Constructs a node with the two given `TTree`s as children
+     * Constructs a node with the two given `LTree`s as children
      * @param left the first child of this node
      * @param right the second child of this node
      */
-    TTree(TTree *left, TTree *right) :
+    LTree(LTree *left, LTree *right) :
             isLeaf(false),
             node(left, right) {
         left->parent = this;
@@ -220,7 +204,7 @@ struct TTree {
      * Constructs a leaf node with the given bit vector
      * @param bv the bit vector to be moved into this leaf node
      */
-    explicit TTree(BitVector bv) :
+    explicit LTree(BitVector bv) :
             isLeaf(true),
             node(std::move(bv)) {}
 
@@ -228,12 +212,12 @@ struct TTree {
      * Constructs an all-zeros leaf node with the specified size
      * @param size the size of this leaf node in bits
      */
-    explicit TTree(unsigned long size) :
+    explicit LTree(unsigned long size) :
             isLeaf(true),
             node(size) {}
 
-    /// The TTree destructor decides which variant of the union to destroy
-    ~TTree();
+    /// The LTree destructor decides which variant of the union to destroy
+    ~LTree();
 
     /**
      * Returns the depth of this node, which is the length of the path from this
@@ -259,43 +243,37 @@ struct TTree {
 
     /**
      * Given an integer n, returns the child node containing the n-th bit in this subtree,
-     *      as well as the numbers of bits and ones preceding it.
+     *      as well as the numbers of bits preceding it.
      * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
-     * @return  a TTree::InternalNode::Entry with:
-     *      b = number of bits preceding this node in the TTree
-     *      o = number of ones preceding this node in the TTree
+     * @return  a LTree::LInternalNode::Entry with:
+     *      b = number of bits preceding this node in the LTree
      *      i = the index of the relevant subtree in the `entries` of `this`
      */
-    Record findChild(unsigned long);
+    LRecord findChild(unsigned long);
 
     /**
      * Given an integer n, returns the leaf containing the n-th bit of the bitvector,
-     *      as well as the numbers of bits and ones preceding this leaf node.
+     *      as well as the numbers of bits preceding this leaf node.
      * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
-     * @return  a TTree::InternalNode::Entry with:
-     *      b = number of bits preceding this node in the TTree
-     *      o = number of ones preceding this node in the TTree
+     * @param path  a pointer to a vector of `LNesbo` entries that represent the last path took
+     *        if the path is nullptr, a regular `findLeaf` is done. If the path is empty, a regular
+     *        `findLeaf` is done but the result is stored in the path vector
+     * @return  a LTree::LInternalNode::Entry with:
+     *      b = number of bits preceding this node in the LTree
      *      P = a pointer to the leaf node containing the n-th bit
-     * Note that P is strictly just a pointer to a `TTreeNode`, as defined by the `entry` struct
-     * But the union is always of the `LeafNode` variant.
+     * Note that P is strictly just a pointer to a `LTreeNode`, as defined by the `entry` struct
+     * But the union is always of the `LLeafNode` variant.
      */
-    InternalNode::Entry findLeaf(unsigned long, vector<Nesbo> *path = nullptr);
+    LInternalNode::Entry findLeaf(unsigned long, vector<LNesbo> *path = nullptr);
 
-    InternalNode::Entry findLeaf2(unsigned long, vector<Nesbo> &);
-
-    /**
-     * Performs the `rank` operation on the bitvector represented by this tree
-     * @param n  an integer with 0 <= n < (numbers of bits in the tree)
-     * @return the number of 1-bits in the tree up to position n
-     */
-    unsigned long rank1(unsigned long, vector<Nesbo> *path = nullptr);
+    LInternalNode::Entry findLeaf2(unsigned long, vector<LNesbo> &);
 
     /**
      * Performs the `access` operation on this subtree
-     * @param n the index of a bit in the `TTree`
+     * @param n the index of a bit in the `LTree`
      * @return the value of the `n`-th bit in the tree
      */
-    bool access(unsigned long, vector<Nesbo> *path = nullptr);
+    bool access(unsigned long, vector<LNesbo> *path = nullptr);
 
     /**
      * Sets the bit at position n to the value of b
@@ -304,7 +282,7 @@ struct TTree {
      * @return true if this bit changed, e.g.
      *      if the previous value of the bit was unequal to b
      */
-    bool setBit(unsigned long, bool, vector<Nesbo> *path = nullptr);
+    bool setBit(unsigned long, bool, vector<LNesbo> *path = nullptr);
 
     /**
      * Gets the total number of bits covered by this subtree
@@ -313,34 +291,27 @@ struct TTree {
     unsigned long bits();
 
     /**
-     * Gets the total number of ones covered by this subtree
-     * @return the total number of 1-bits in this node's subtree
-     */
-    unsigned long ones();
-
-    /**
-     * Changes the values of the counters `b` and `o` of all the nodes whose
+     * Changes the values of the counter `b` of all the nodes whose
      * subtree contains this node. Used to update these counters after modifying
      * the underlying bitvector, or the structure of the tree.
      *
      * @param dBits the change in the number of bits (e.g. 4 when 4 bits were inserted)
-     * @param dOnes the change in the number of ones (e.g. 2 when 2 zeros were set to ones)
      */
-    void updateCounters(long, long);
+    void updateCounters(long);
 
     /**
      * Inserts one block of k^2 bits at the specified position
      *
      * @return the new root if the tree's root changed, nullptr otherwise
      */
-    TTree *insertBlock(long unsigned, vector<Nesbo> *path = nullptr);
+    LTree *insertBlock(long unsigned, vector<LNesbo> *path = nullptr);
 
     /**
      * Deletes a block of k^2 bits at the specified position
      *
      * @return the new root if the tree's root changed, nullptr otherwise
      */
-    TTree *deleteBlock(long unsigned, vector<Nesbo> *path = nullptr);
+    LTree *deleteBlock(long unsigned, vector<LNesbo> *path = nullptr);
 
     unsigned long memoryUsage();
 
@@ -360,8 +331,8 @@ private:
      * guaranteed when only a single block is inserted. That is why this method
      * is private, and insertBlock is public.
      */
-    TTree *
-    insertBits(long unsigned, long unsigned, vector<Nesbo> *path = nullptr);
+    LTree *
+    insertBits(long unsigned, long unsigned, vector<LNesbo> *path = nullptr);
 
     /**
      * Deletes the given number of bits in the subtree, assuming they are all in the
@@ -379,8 +350,8 @@ private:
      * guaranteed when only a single block is deleted. That is why this method
      * is private, and deleteBlock is public.
      */
-    TTree *
-    deleteBits(long unsigned, long unsigned, vector<Nesbo> *path = nullptr);
+    LTree *
+    deleteBits(long unsigned, long unsigned, vector<LNesbo> *path = nullptr);
 
     /**
      * Checks if this node satisfies the maximum size for an internal node
@@ -390,7 +361,7 @@ private:
      * @return nullptr in most cases, but returns the new root if it has
      *         changed, e.g. if the height of the tree has increased
      */
-    TTree *checkSizeUpper();
+    LTree *checkSizeUpper();
 
     /**
      * Checks if this node satisfies the minimum size for an internal node
@@ -401,7 +372,7 @@ private:
      * @return nullptr in most cases, but returns the new root if it has
      *         changed, e.g. if the height of the tree has decreased
      */
-    TTree *checkSizeLower();
+    LTree *checkSizeLower();
 
     /**
      * Tries to move a child of an internal node to a sibling, and returns
@@ -428,7 +399,7 @@ private:
      * @return nullptr in most cases, but returns the new root if this operation
      *         causes the tree's height to increase, which changes the root
      */
-    TTree *splitInternal();
+    LTree *splitInternal();
 
     /**
      * Splits this node into two nodes of minimum size, and recursively
@@ -437,7 +408,7 @@ private:
      * @return nullptr in most cases, but returns the new root if this operation
      *         causes the tree's height to increase, which changes the root
      */
-    TTree *splitLeaf();
+    LTree *splitLeaf();
 
     /**
      * Tries to steal a node from one of this node's siblings, and returns true
@@ -464,7 +435,7 @@ private:
      * @return nullptr usually, but returns the new root it it changed due to this
      *         operation, e.g. when the height of the tree changed
      */
-    TTree *mergeInternal();
+    LTree *mergeInternal();
 
     /**
      * Merges this node with a sibling, and recursively checks the rest of the
@@ -473,7 +444,7 @@ private:
      * @return nullptr usually, but returns the new root it it changed due to this
      *         operation, e.g. when the height of the tree changed
      */
-    TTree *mergeLeaf();
+    LTree *mergeLeaf();
 
     /**
      * Moves a single child (the leftmost child) of this node to the end of the
@@ -497,4 +468,4 @@ private:
     void moveRightLeaf();
 };
 
-#endif //DK2TREE_TTREE_H
+#endif //DK2TREE_LTREE_H

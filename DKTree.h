@@ -10,6 +10,7 @@
 #include <bits/stdc++.h>
 
 #include "TTree.h"
+#include "LTree.h"
 
 // a class that contains a vector of entries in the matrix
 // with a start and end such that the entries at index start <= i < end are all in the same block at when
@@ -36,9 +37,9 @@ class DKTree final {
 private:
 
     TTree *ttree; // the tree whose leaves contain the internal nodes of the k2 tree
-    TTree *ltree; // the tree whose leaves contain the leave nodes of the k2 tree
+    LTree *ltree; // the tree whose leaves contain the leave nodes of the k2 tree
     vector<Nesbo> tPath;
-    vector<Nesbo> lPath;
+    vector<LNesbo> lPath;
     std::vector<unsigned long> freeColumns; // contains the entries in the matrix  below firstFreeColumn that are not in use
     unsigned long firstFreeColumn; // the lowest index above the used entries
     unsigned long matrixSize; // current size of the matrix, is a power of k
