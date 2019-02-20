@@ -11,6 +11,7 @@
 
 #include "TTree.h"
 #include "LTree.h"
+#include "parameters.cpp"
 
 // a class that contains a vector of entries in the matrix
 // with a start and end such that the entries at index start <= i < end are all in the same block at when
@@ -43,8 +44,6 @@ private:
     std::vector<unsigned long> freeColumns; // contains the entries in the matrix  below firstFreeColumn that are not in use
     unsigned long firstFreeColumn; // the lowest index above the used entries
     unsigned long matrixSize; // current size of the matrix, is a power of k
-    static constexpr unsigned long k = 2;
-    static constexpr unsigned long k2 = k * k; //k square
 
 public:
 
