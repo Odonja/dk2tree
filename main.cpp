@@ -13,14 +13,21 @@ int main(int argc, char **argv) {
 }
 
 void doLargeTests() {
+    std::cout << ::getpid() << std::endl;
+
     unsigned long size = 10000;
     unsigned long m = size * 5;
     printf("Size: %lu, m: %lu\n", size, m);
+
 //    printf("\nAdjacency matrix:\n");
-//    largeTest<AdjacencyMatrix>(size, m);
-    printf("\nAdjacency lists:\n");
-    largeTest<AdjacencyLists>(size, m);
+//    auto matrix = largeTest<AdjacencyMatrix>(size, m);
+//    delete matrix;
+
+//    printf("\nAdjacency lists:\n");
+//    auto graph = largeTest<AdjacencyLists>(size, m);
+//    delete graph;
+
     printf("\ndk2tree:\n");
     auto tree = largeTest<DKTree>(size, m);
-    tree->printtt();
+    delete tree;
 }
