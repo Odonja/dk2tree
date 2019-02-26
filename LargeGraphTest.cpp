@@ -42,7 +42,10 @@ G* largeTest(unsigned long size, unsigned long m) {
     t.stop();
     printf("Initialisation: %f seconds\n", t.read());
     t.start();
-    for (unsigned long k = 0; k < m; k++) {
+    for (unsigned long k = 1; k <= m; k++) {
+        if (k % 1000 == 0) {
+            printf("%lu / %lu\r", k, m);
+        }
         unsigned long i = randRange(0, size);
         unsigned long j = randRange(0, size);
         g->addEdge(i, j);
