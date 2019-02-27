@@ -7,24 +7,37 @@
 
 #include <vector>
 #include <cstdint>
+#include <cassert>
+#include <cstdio>
 #include "parameters.cpp"
 
 using std::vector;
 
-/**
- * The number of bits in one block. This number should be < 256, so that the
- * counts can be stored in a single 8-bit number.
- */
-static const unsigned long BLOCK_SIZE = 32;
+typedef uint64_t u64;
+typedef uint8_t u8;
+
+#define MAX_BIT (((u64) 1) << 63)
+
+u64 ones(u64 n) {
+    u64 tot = 0;
+    for (u8 i = 0; i < 64; i++) {
+        if ((n & 0x01) != 0) {
+            tot++;
+        }
+        n >>= 1;
+    }
+    return tot;
+}
 
 /**
  * A simple bitvector containing the `raw` bits in a vector<bool>, as well as
  * a list of the number of ones in each block, to speed up rank operations
  */
-template <unsigned long LENGTH = (B + 63) / 64>
+template <unsigned long LENGTH = (B + 63) / 64 + 1>
 struct BitVector {
-    vector<bool> data;
-    vector<uint8_t> block_counts;
+    u64 bits;
+    u64 data[LENGTH];
+    u8 block_counts[LENGTH];
 
     /**
      * Gives the value of the n-th bit in the bitvector. This is a read-only operator,
@@ -33,8 +46,10 @@ struct BitVector {
      * @param n an index with 0 <= n < bv.size()
      * @return the value of the n-th bit of the bitvector
      */
-    const bool operator[](unsigned long n) {
-        return data[n];
+    const bool operator[](unsigned long n) const {
+        u64 idx = n / 64;
+        u64 mask = MAX_BIT >> (n % 64);
+        return (data[idx] & mask) != 0;
     }
 
     /**
@@ -44,13 +59,17 @@ struct BitVector {
      * @return true iff the previous value of bit n was unequal to b
      */
     const bool set(unsigned long n, bool b) {
-        bool changed = b ^data[n];
-        data[n] = b;
+        u64 block = n / 64;
+        u64 mask = MAX_BIT >> (n % 64);
+
+        bool changed = ((data[block] & mask) != 0) ^ b;
+
         if (changed) {
-            unsigned long block = n / BLOCK_SIZE;
             if (b) {
+                data[block] |= mask;
                 block_counts[block]++;
             } else {
+                data[block] &= ~mask;
                 block_counts[block]--;
             }
         }
@@ -63,8 +82,8 @@ struct BitVector {
      * @return the number of ones in the bits [0 ... n)
      */
     unsigned long rank1(unsigned long n) {
-        unsigned long end_blocks = n - n % BLOCK_SIZE;
-        unsigned long nr_blocks = end_blocks / BLOCK_SIZE;
+        unsigned long end_blocks = n - n % 64;
+        unsigned long nr_blocks = end_blocks / 64;
         return countBlocks(0, nr_blocks) + countOnesRaw(end_blocks, n);
     }
 
@@ -73,11 +92,11 @@ struct BitVector {
      * rank1(hi) - rank1(lo)
      */
     unsigned long rangeRank1(unsigned long lo, unsigned long hi) {
-        unsigned long blockLo = (lo + BLOCK_SIZE - 1) / BLOCK_SIZE, blockHi = hi / BLOCK_SIZE;
+        unsigned long blockLo = (lo + 64 - 1) / 64, blockHi = hi / 64;
         if (blockLo > blockHi) {
             return countOnesRaw(lo, hi);
         }
-        unsigned long blockStart = blockLo * BLOCK_SIZE, blockEnd = blockHi * BLOCK_SIZE;
+        unsigned long blockStart = blockLo * 64, blockEnd = blockHi * 64;
         return countOnesRaw(lo, blockStart) + countBlocks(blockLo, blockHi) + countOnesRaw(blockEnd, hi);
     }
 
@@ -87,19 +106,40 @@ struct BitVector {
      * @param size the number of bits to be inserted
      */
     void insert(unsigned long begin, unsigned long size) {
-        data.insert(data.begin() + begin, size, false);
-        // If we insert a whole number of blocks, just shift the block_counts
-        // data right. Else, we have to recompute this data
-        if (begin % BLOCK_SIZE == 0 && size % BLOCK_SIZE == 0) {
-            block_counts.insert(
-                    block_counts.begin() + begin / BLOCK_SIZE,
-                    size / BLOCK_SIZE,
-                    0
-            );
-        } else {
-            block_counts.resize((data.size() + BLOCK_SIZE - 1) / BLOCK_SIZE, 0);
-            recompute(begin);
+        u64 block_start = begin / 64;
+        u64 block_amount = size / 64;
+        u64 bit_amount = size % 64;
+
+        // We save the first block, so we can set everything but the part to be
+        // moved to zero, simplifying the rest
+        u64 first_part_mask = (begin % 64 == 0) ? ~0ULL : (1ULL << (64 - begin % 64)) - 1;
+        u64 first_block_keep = data[block_start] & ~first_part_mask;
+        data[block_start] &= first_part_mask;
+
+        // First, shift by whole number of blocks if applicable
+        if (block_amount != 0) {
+            for (u64 idx = LENGTH - 1; idx >= block_start + block_amount; idx--) {
+                data[idx] = data[idx - block_amount];
+                data[idx - block_amount] = 0;
+            }
         }
+
+        // Then, shift by the remaining number of bits
+        if (bit_amount != 0) {
+            for (u64 idx = LENGTH - 1; idx >= block_start + 1; idx--) {
+                data[idx] = (data[idx] >> bit_amount) |
+                            (data[idx - 1] << (64 - bit_amount));
+            }
+            data[block_start] >>= bit_amount;
+        }
+
+        // Finally, restore the first block
+        // We don't recompute the ones counts, since this method is only used by
+        // other methods that will recompute it
+        data[block_start] |= first_block_keep;
+
+        bits += size;
+        recompute(begin);
     }
 
     /**
@@ -110,10 +150,12 @@ struct BitVector {
      * @param lo the start of the range in `from` to insert
      * @param hi the end of the range in `from` to insert
      */
-    void insert(unsigned long begin, const BitVector &from, unsigned long lo, unsigned long hi) {
-        data.insert(data.begin() + begin, from.data.begin() + lo, from.data.begin() + hi);
-        block_counts.resize((data.size() + BLOCK_SIZE - 1) / BLOCK_SIZE, 0);
-        recompute(); // TODO: maybe do more efficient update if inserted is whole number of blocks
+    void insert(unsigned long begin, const BitVector<LENGTH> &from, unsigned long lo, unsigned long hi) {
+        insert(begin, hi - lo);
+        for (u64 idx = 0; idx + lo < hi; idx++) {
+            set(idx + begin, from[idx + lo]);
+        }
+        recompute(begin);
     }
 
     /**
@@ -124,9 +166,7 @@ struct BitVector {
      * @param hi the end of the range of bits to append
      */
     void append(const BitVector &from, unsigned long lo, unsigned long hi) {
-        data.insert(data.end(), from.data.begin() + lo, from.data.begin() + hi);
-        block_counts.resize((data.size() + BLOCK_SIZE - 1) / BLOCK_SIZE, 0);
-        recompute(); // TODO: maybe do more efficient update if inserted is whole number of blocks
+        insert(bits, from, lo, hi);
     }
 
 
@@ -136,16 +176,40 @@ struct BitVector {
      * @param hi the end of the range of bits to be deleted. Should satisfy lo <= hi <= size()
      */
     void erase(unsigned long lo, unsigned long hi) {
-        data.erase(data.begin() + lo, data.begin() + hi);
-        if (lo % BLOCK_SIZE == 0 && hi % BLOCK_SIZE == 0) {
-            block_counts.erase(
-                    block_counts.begin() + lo / BLOCK_SIZE,
-                    block_counts.begin() + hi / BLOCK_SIZE
-            );
-        } else {
-            block_counts.resize((data.size() + BLOCK_SIZE - 1) / BLOCK_SIZE, 0);
-            recompute(lo);
+        u64 amount = hi - lo;
+        u64 block_start = lo / 64;
+        u64 block_amount = amount / 64;
+        u64 bit_amount = amount % 64;
+
+        // We save the first block, so we can set everything but the part to be
+        // moved to zero, simplifying the rest
+        u64 first_part_mask = (lo % 64 == 0) ? ~0ULL : (1ULL << (64 - lo % 64)) - 1;
+        u64 first_block_keep = data[block_start] & ~first_part_mask;
+        data[block_start] &= first_part_mask;
+
+        // First, move everything over by the specified number of blocks
+        if (block_amount != 0) {
+            for (u64 idx = block_start; idx + block_amount < LENGTH; idx++) {
+                data[idx] = data[idx + block_amount];
+                data[idx + block_amount] = 0;
+            }
         }
+
+        // Then, shift everything over by the correct bit-amount
+        if (bit_amount != 0) {
+            for (u64 idx = block_start; idx + 1 < LENGTH; idx++) {
+                data[idx] = (data[idx] << bit_amount) |
+                            (data[idx + 1] >> (64 - bit_amount));
+            }
+            data[LENGTH - 1] <<= bit_amount;
+        }
+
+        // Finally, fix the first block and recompute
+        data[block_start] &= first_part_mask;
+        data[block_start] |= first_block_keep;
+
+        bits -= amount;
+        recompute(lo);
     }
 
     /**
@@ -153,7 +217,7 @@ struct BitVector {
      * @return
      */
     unsigned long size() {
-        return data.size();
+        return bits;
     }
 
     /**
@@ -162,8 +226,9 @@ struct BitVector {
      * @param size the number of bits the constructed vector will contain
      */
     explicit BitVector(unsigned long size) :
-            data(size, false),
-            block_counts((size + BLOCK_SIZE - 1) / BLOCK_SIZE, 0) {}
+            bits(size),
+            data{0},
+            block_counts{0} {}
 
     /**
      * Constructs a bit vector from the range [lo, hi) of another bit vector
@@ -173,13 +238,18 @@ struct BitVector {
      * @param hi the end of the range of bits to take
      */
     BitVector(const BitVector &from, unsigned long lo, unsigned long hi) :
-            data(from.data.begin() + lo, from.data.begin() + hi),
-            block_counts((hi - lo + BLOCK_SIZE - 1) / BLOCK_SIZE) {
-        recompute();
+        bits(0),
+        data{0},
+        block_counts{0}
+        {
+        insert(0, from, lo, hi);
     }
 
     unsigned long memoryUsage() {
-        return sizeof(BitVector) + (data.size() + 7) / 8 + block_counts.size();
+        // For each 64-bit block, we store a 64-bit integer (containing those
+        // bits), and an 8-bit integer storing the number of one-bits
+        // So 72 bits = 9 bytes for each block
+        return ((bits + 63) / 64) * 9;
     }
 
 
@@ -190,20 +260,19 @@ private:
      * @param start the first bit that may have changed and require updating the counters
      */
     void recompute(unsigned long start = 0) {
-        for (unsigned long block = start / BLOCK_SIZE; block < block_counts.size(); block++) {
-            unsigned long min = block * BLOCK_SIZE;
-            unsigned long max = (block + 1) * BLOCK_SIZE;
-            if (max > data.size()) {
-                max = data.size();
-            }
-            block_counts[block] = (uint8_t) countOnesRaw(min, max);
+        start /= 64;
+        for (u64 block = start; block < LENGTH; block++) {
+            block_counts[block] = (u8) ones(data[block]);
         }
     }
 
     unsigned long countOnesRaw(unsigned long lo, unsigned long hi) {
-        unsigned long tot = 0;
-        for (unsigned long k = lo; k < hi; k++) {
-            tot += data[k];
+        // TODO speed up
+        u64 tot = 0;
+        for (u64 i = lo; i < hi; i++) {
+            if ((*this)[i]) {
+                tot++;
+            }
         }
         return tot;
     }
