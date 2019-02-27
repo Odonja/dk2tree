@@ -582,46 +582,24 @@ void DKTree::deleteBlockLtree(unsigned long position) {
     lPath.clear();
 }
 
-void measure(TTree* tree, unsigned long *bv, unsigned long *inodes, unsigned long *lnodes) {
-    if (tree->isLeaf) {
-        (*lnodes) ++;
-        (*bv) += tree->node.leafNode->bits();
-    } else {
-        (*inodes)++;
-        for (auto &entry : tree->node.internalNode->entries) {
-            auto p = entry.P;
-            if (p != nullptr) {
-                measure(p, bv, inodes, lnodes);
-            }
-        }
-    }
-}
-
 unsigned long DKTree::memoryUsage() {
-    unsigned long bv = 0, inodes =0, lnodes = 0;
-    measure(this->ttree, &bv, &inodes, &lnodes);
-    printf("BitVector: %lu bits\n", bv);
-    printf("%lu internal, %lu leaf nodes\n", inodes, lnodes);
+    unsigned long base = sizeof(DKTree),
+        tSize = ttree->memoryUsage(),
+        tBits = ttree->bits(),
+        lSize = ltree->memoryUsage(),
+        lBits = ltree->bits(),
+        tPathSize = tPath.size() * sizeof(Nesbo),
+        lPathSize = lPath.size() * sizeof(LNesbo),
+        freeSize = freeColumns.size() * sizeof(unsigned long);
 
-    unsigned long m;
-    unsigned long result = sizeof(DKTree);
-    printf("DKTree: %lu\n", sizeof(DKTree));
+    printf("  TTree: %lu\n", tSize);
+    printf("    Of which bitvector: %lu\n", (tBits + 7) / 8);
 
-    m = ttree->memoryUsage();
-    printf("TTree: %lu\n", m);
-    result += m;
-    printf("  Of which bitvector: %lu\n", (ttree->bits() + 7) / 8);
+    printf("  LTree: %lu\n", lSize);
+    printf("    Of which bitvector: %lu\n", (lBits + 7) / 8);
 
-    m = ltree->memoryUsage();
-    printf("LTree: %lu\n", m);
-    result += m;
-    printf("  Of which bitvector: %lu\n", (ltree->bits() + 7) / 8);
-
-    result += tPath.size() * sizeof(Nesbo);
-    printf("TPath: %lu\n", tPath.size() * sizeof(Nesbo));
-    result += lPath.size() * sizeof(LNesbo);
-    printf("LPath: %lu\n", lPath.size() * sizeof(LNesbo));
-    result += freeColumns.size() * sizeof(unsigned long);
-    printf("Free Columns: %lu\n", freeColumns.size() * sizeof(unsigned long));
-    return result;
+    printf("  TPath: %lu\n", tPathSize);
+    printf("  LPath: %lu\n", lPathSize);
+    printf("  Free Columns: %lu\n", freeSize);
+    return tSize + lSize + tPathSize + lPathSize + freeSize;
 }
