@@ -147,7 +147,7 @@ struct InternalNode {
 
 /** A leaf node, which consists of a bitvector (represented by vector<bool>) */
 struct LeafNode {
-    BitVector bv;
+    BitVector<> bv;
 
     /**
      * Constructs a leaf with the given number of bits
@@ -159,7 +159,7 @@ struct LeafNode {
      * Constructs a leaf node from the given bit vector
      * @param bv the bitvector to be moved into this leaf node
      */
-    explicit LeafNode(BitVector bv) :
+    explicit LeafNode(BitVector<> bv) :
             bv(std::move(bv)) {}
 
     /**
@@ -190,7 +190,7 @@ struct TTree {
 
         Node(TTree *, TTree *);
 
-        explicit Node(BitVector);
+        explicit Node(BitVector<>);
 
         explicit Node(unsigned long);
     } node;
@@ -220,7 +220,7 @@ struct TTree {
      * Constructs a leaf node with the given bit vector
      * @param bv the bit vector to be moved into this leaf node
      */
-    explicit TTree(BitVector bv) :
+    explicit TTree(BitVector<> bv) :
             isLeaf(true),
             node(std::move(bv)) {}
 

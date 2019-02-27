@@ -17,7 +17,7 @@ TTree::Node::Node(TTree *P1, TTree *P2) {
     this->internalNode = new InternalNode(P1, P2);
 }
 
-TTree::Node::Node(BitVector bv) {
+TTree::Node::Node(BitVector<> bv) {
     this->internalNode = nullptr;
     this->leafNode = new LeafNode(std::move(bv));
 }
@@ -160,7 +160,7 @@ bool TTree::access(unsigned long n, vector<Nesbo> *path) {
 bool TTree::setBit(unsigned long n, bool b, vector<Nesbo> *path) {
     // Find the leaf node that contains this bit
     auto entry = findLeaf(n, path);
-    BitVector &bv = entry.P->node.leafNode->bv;
+    BitVector<> &bv = entry.P->node.leafNode->bv;
     bool changed = bv.set(n - entry.b, b);
 
     if (changed) {
@@ -221,11 +221,11 @@ TTree *TTree::deleteBits(long unsigned index, long unsigned count,
 }
 
 TTree *TTree::insertBlock(long unsigned index, vector<Nesbo> *path) {
-    return this->insertBits(index, block, path);
+    return this->insertBits(index, BLOCK_SIZE, path);
 }
 
 TTree *TTree::deleteBlock(long unsigned index, vector<Nesbo> *path) {
-    return this->deleteBits(index, block, path);
+    return this->deleteBits(index, BLOCK_SIZE, path);
 }
 
 unsigned long TTree::depth() {
@@ -254,7 +254,7 @@ unsigned long TTree::height() {
 
 unsigned long TTree::size() {
     if (isLeaf) {
-        return node.leafNode->bits() / block;
+        return node.leafNode->bits() / BLOCK_SIZE;
     } else {
         return node.internalNode->size;
     }
@@ -491,12 +491,12 @@ void TTree::moveLeftLeaf() {
     unsigned long idx = indexInParent;
     TTree *sibling = parent->node.internalNode->entries[idx - 1].P;
     // Take the first k*k block of `this`, and append it to `sibling`
-    BitVector &right = node.leafNode->bv;
-    BitVector &left = sibling->node.leafNode->bv;
-    unsigned long d_b = block;
-    unsigned long d_o = right.rank1(block);
-    left.append(right, 0, block);
-    right.erase(0, block);
+    BitVector<> &right = node.leafNode->bv;
+    BitVector<> &left = sibling->node.leafNode->bv;
+    unsigned long d_b = BLOCK_SIZE;
+    unsigned long d_o = right.rank1(BLOCK_SIZE);
+    left.append(right, 0, BLOCK_SIZE);
+    right.erase(0, BLOCK_SIZE);
 
     // Update the parent's b and o counters
     parent->node.internalNode->entries[idx].b -= d_b;
@@ -510,11 +510,11 @@ void TTree::moveRightLeaf() {
     unsigned long idx = indexInParent;
     TTree *sibling = parent->node.internalNode->entries[idx + 1].P;
     // Take the first k*k block of `this`, and append it to `sibling`
-    BitVector &left = node.leafNode->bv;
-    BitVector &right = sibling->node.leafNode->bv;
+    BitVector<> &left = node.leafNode->bv;
+    BitVector<> &right = sibling->node.leafNode->bv;
     unsigned long hi = left.size();
-    unsigned long lo = hi - block;
-    unsigned long d_b = block;
+    unsigned long lo = hi - BLOCK_SIZE;
+    unsigned long d_b = BLOCK_SIZE;
     unsigned long d_o = left.rangeRank1(lo, hi);
     right.insert(0, left, lo, hi);
     left.erase(lo, hi);
@@ -565,9 +565,9 @@ TTree *TTree::splitInternal() {
 TTree *TTree::splitLeaf() {
     unsigned long n = this->node.leafNode->bits();
     unsigned long mid = n / 2;
-    mid -= mid % block;
+    mid -= mid % BLOCK_SIZE;
     auto &left = this->node.leafNode->bv;
-    auto right = BitVector(left, mid, n);
+    auto right = BitVector<>(left, mid, n);
     left.erase(mid, n);
     auto *newNode = new TTree(right);
     if (parent == nullptr) {

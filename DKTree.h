@@ -9,8 +9,8 @@
 #include <utility>
 #include <bits/stdc++.h>
 
-#include "TTree.h"
-#include "LTree.h"
+#include "TTree.cpp"
+#include "LTree.cpp"
 #include "parameters.cpp"
 
 // a class that contains a vector of entries in the matrix

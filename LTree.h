@@ -135,9 +135,9 @@ struct LInternalNode {
     void remove(unsigned long);
 };
 
-/** A leaf node, which consists of a bitvector (represented by vector<bool>) */
+/** A leaf node, which consists of a BitVector<> (represented by vector<bool>) */
 struct LLeafNode {
-    BitVector bv;
+    BitVector<> bv;
 
     /**
      * Constructs a leaf with the given number of bits
@@ -147,9 +147,9 @@ struct LLeafNode {
 
     /**
      * Constructs a leaf node from the given bit vector
-     * @param bv the bitvector to be moved into this leaf node
+     * @param bv the BitVector<> to be moved into this leaf node
      */
-    explicit LLeafNode(BitVector bv) :
+    explicit LLeafNode(BitVector<> bv) :
             bv(std::move(bv)) {}
 
     /**
@@ -174,7 +174,7 @@ struct LTree {
 
         Node(LTree *, LTree *);
 
-        explicit Node(BitVector);
+        explicit Node(BitVector<>);
 
         explicit Node(unsigned long);
     } node;
@@ -204,7 +204,7 @@ struct LTree {
      * Constructs a leaf node with the given bit vector
      * @param bv the bit vector to be moved into this leaf node
      */
-    explicit LTree(BitVector bv) :
+    explicit LTree(BitVector<> bv) :
             isLeaf(true),
             node(std::move(bv)) {}
 
@@ -252,7 +252,7 @@ struct LTree {
     LRecord findChild(unsigned long);
 
     /**
-     * Given an integer n, returns the leaf containing the n-th bit of the bitvector,
+     * Given an integer n, returns the leaf containing the n-th bit of the BitVector<>,
      *      as well as the numbers of bits preceding this leaf node.
      * @param n  an integer that satisfies 0 <= n < (number of bits in this subtree)
      * @param path  a pointer to a vector of `LNesbo` entries that represent the last path took
@@ -293,7 +293,7 @@ struct LTree {
     /**
      * Changes the values of the counter `b` of all the nodes whose
      * subtree contains this node. Used to update these counters after modifying
-     * the underlying bitvector, or the structure of the tree.
+     * the underlying BitVector<>, or the structure of the tree.
      *
      * @param dBits the change in the number of bits (e.g. 4 when 4 bits were inserted)
      */

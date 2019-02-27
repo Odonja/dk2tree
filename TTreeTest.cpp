@@ -271,8 +271,8 @@ TEST(TTreeTest, AccessSetBit2) {
  */
 TEST(TTreeTest, InsertDelete) {
     // This test assumes that B is not too small. Else, we skip this test
-    if (B <= 2 * block) {
-        printf("B = %u and block = %u means skipping TTreeTest::InsertDelete\n", B, block);
+    if (B <= 2 * BLOCK_SIZE) {
+        printf("B = %u and BLOCK_SIZE = %u means skipping TTreeTest::InsertDelete\n", B, BLOCK_SIZE);
         return;
     }
 
@@ -293,7 +293,7 @@ TEST(TTreeTest, InsertDelete) {
     EXPECT_EQ(root->ones(), 2);
 
     for (unsigned long i = 0; i < B; i++) {
-        EXPECT_EQ(root->access(i), i == B / 2 - 1 || i == B / 2 + block);
+        EXPECT_EQ(root->access(i), i == B / 2 - 1 || i == B / 2 + BLOCK_SIZE);
     }
 }
 
@@ -329,7 +329,7 @@ TEST(TTreeTest, BPlusTest0) {
     unsigned long checkInterval = 100;
     vector<bool> bv(n, false);
     // Fill up the tree
-    for (unsigned long i = 0; i < n; i += block) {
+    for (unsigned long i = 0; i < n; i += BLOCK_SIZE) {
         insertBlock(&root, i);
         if ((i + 1) % checkInterval == 0) {
             ASSERT_TRUE(validate(root));
@@ -355,21 +355,21 @@ TEST(TTreeTest, BPlusTest1) {
     // All the while, the tree and bit vector should remain equal
     unsigned long numBlocks = 1024;
     unsigned long checkInterval = 32;
-    unsigned long totalSize = block * numBlocks;
+    unsigned long totalSize = BLOCK_SIZE * numBlocks;
     auto *root = new TTree();
     vector<bool> ref(totalSize, false);
     unsigned long lo = 0, hi = 0;
 
     for (unsigned long i = 0; i < numBlocks; i++) {
-        insertBlock(&root, i * block);
+        insertBlock(&root, i * BLOCK_SIZE);
         if (i % 17 == 0) {
-            for (unsigned long j = 0; j < block; j++) {
-                bool changed = root->setBit(i * block + j, true);
+            for (unsigned long j = 0; j < BLOCK_SIZE; j++) {
+                bool changed = root->setBit(i * BLOCK_SIZE + j, true);
                 ASSERT_TRUE(changed);
-                ref[i * block + j] = true;
+                ref[i * BLOCK_SIZE + j] = true;
             }
         }
-        hi += block;
+        hi += BLOCK_SIZE;
         if ((i + 1) % checkInterval == 0) {
             ASSERT_TRUE(validate(root));
             ASSERT_TRUE(validateSize(root));
@@ -384,7 +384,7 @@ TEST(TTreeTest, BPlusTest1) {
     // Delete everything again
     for (unsigned long i = 0; i < numBlocks; i++) {
         deleteBlock(&root, 0);
-        lo += block;
+        lo += BLOCK_SIZE;
         if ((i + 1) % checkInterval == 0) {
             ASSERT_TRUE(validate(root));
             ASSERT_TRUE(validateSize(root));
@@ -398,7 +398,7 @@ TEST(TTreeTest, BPlusTest2) {
     // All the while, the tree and bit vector should remain equal
     unsigned long numBlocks = 1024;
     unsigned long checkInterval = 32;
-    unsigned long totalSize = block * numBlocks;
+    unsigned long totalSize = BLOCK_SIZE * numBlocks;
     auto *root = new TTree();
     vector<bool> ref(totalSize, false);
     unsigned long lo = totalSize, hi = totalSize;
@@ -406,13 +406,13 @@ TEST(TTreeTest, BPlusTest2) {
     for (unsigned long i = 0; i < numBlocks; i++) {
         insertBlock(&root, 0);
         if (i % 17 == 0) {
-            for (unsigned long j = 0; j < block; j++) {
+            for (unsigned long j = 0; j < BLOCK_SIZE; j++) {
                 bool changed = root->setBit(j, true);
                 ASSERT_TRUE(changed);
-                ref[(numBlocks - 1 - i) * block + j] = true;
+                ref[(numBlocks - 1 - i) * BLOCK_SIZE + j] = true;
             }
         }
-        lo -= block;
+        lo -= BLOCK_SIZE;
         if ((i + 1) % checkInterval == 0) {
             ASSERT_TRUE(validate(root));
             ASSERT_TRUE(validateSize(root));
@@ -426,8 +426,8 @@ TEST(TTreeTest, BPlusTest2) {
 
     // Delete everything again
     for (unsigned long i = numBlocks; i > 0; i--) {
-        deleteBlock(&root, (i - 1) * block);
-        hi -= block;
+        deleteBlock(&root, (i - 1) * BLOCK_SIZE);
+        hi -= BLOCK_SIZE;
         if ((i - 1) % checkInterval == 0) {
             ASSERT_TRUE(validate(root));
             ASSERT_TRUE(validateSize(root));
@@ -445,14 +445,14 @@ TEST(TTreeTest, BPlusTest3) {
     auto root = new TTree();
     for (unsigned long i = 0; i < numBlocks; i++) {
         insertBlock(&root, 0);
-        for (unsigned long j = 0; j < block; j++) {
+        for (unsigned long j = 0; j < BLOCK_SIZE; j++) {
             root->setBit(j, true);
         }
     }
     // tree = 1111...1111
 
     // Make sure that the tree consists of the correct number of ones
-    unsigned long len = numBlocks * block;
+    unsigned long len = numBlocks * BLOCK_SIZE;
     ASSERT_EQ(root->bits(), len);
     for (unsigned long i = 0; i < len; i++) {
         ASSERT_TRUE(root->access(i));
@@ -461,14 +461,14 @@ TEST(TTreeTest, BPlusTest3) {
     ASSERT_EQ(root->rank1(len), len);
 
     for (unsigned long i = 0; i < numBlocks; i++) {
-        insertBlock(&root, 2 * i * block);
+        insertBlock(&root, 2 * i * BLOCK_SIZE);
     }
     // *tree = 000011110000...00001111
 
     // Create the reference vector and test it against the tree
     vector<bool> ref(2 * len);
-    for (unsigned long i = block; i < 2 * len; i += 2 * block) {
-        for (unsigned long j = 0; j < block; j++) {
+    for (unsigned long i = BLOCK_SIZE; i < 2 * len; i += 2 * BLOCK_SIZE) {
+        for (unsigned long j = 0; j < BLOCK_SIZE; j++) {
             ref[i + j] = true;
         }
     }
@@ -477,7 +477,7 @@ TEST(TTreeTest, BPlusTest3) {
 
     ASSERT_TRUE(treeEqualsVec(root, ref));
 
-    for (unsigned long i = block; i <= len; i += block) {
+    for (unsigned long i = BLOCK_SIZE; i <= len; i += BLOCK_SIZE) {
         deleteBlock(&root, i);
     }
 

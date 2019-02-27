@@ -4,7 +4,7 @@
 
 #include <cstdio>
 #include "gtest/gtest.h"
-#include "AdjacencyMatrix.h"
+#include "AdjacencyMatrix.cpp"
 #include <iostream>
 
 void validate(const AdjacencyMatrix &a) {
