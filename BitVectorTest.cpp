@@ -8,7 +8,7 @@
 #include "BitVector.h"
 #include "gtest/gtest.h"
 
-bool validate(BitVector &bv) {
+bool validate(BitVector<> &bv) {
     unsigned long n = bv.size(), nb = (n + BLOCK_SIZE - 1) / BLOCK_SIZE;
     EXPECT_EQ(nb, bv.block_counts.size());
     if (nb != bv.block_counts.size()) {
@@ -31,7 +31,7 @@ bool validate(BitVector &bv) {
 
 TEST(BitVectorTest, ReadWrite) {
     unsigned long size = 512;
-    BitVector bv(size);
+    BitVector<> bv(size);
     unsigned long toFlip[] = {
             0, 1, 8, 9, 12, 21, 30, 35, 38, 50, 51, 63, 65, 66, 73, 74,
             83, 89, 100, 106, 107, 108, 109, 110, 120, 132, 148, 149, 153, 165, 167, 175,
@@ -68,7 +68,7 @@ TEST(BitVectorTest, ReadWrite) {
 
 TEST(BitVectorTest, InsertDelete) {
     unsigned long size = 512;
-    BitVector bv(size);
+    BitVector<> bv(size);
     bv.set(100, true);
     EXPECT_EQ(bv.rank1(100), 0);
     EXPECT_EQ(bv.rank1(101), 1);
@@ -103,7 +103,7 @@ TEST(BitVectorTest, InsertDelete) {
 TEST(BitVectorTest, Patterns) {
     unsigned long size = 512;
     for (unsigned long k = 1; k < size; k++) {
-        BitVector bv(size);
+        BitVector<> bv(size);
         for (unsigned long i = k - 1; i < size; i += k) {
             bv.set(i, true);
         }

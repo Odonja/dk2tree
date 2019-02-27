@@ -17,7 +17,7 @@ LTree::Node::Node(LTree *P1, LTree *P2) {
     this->internalNode = new LInternalNode(P1, P2);
 }
 
-LTree::Node::Node(BitVector bv) {
+LTree::Node::Node(BitVector<> bv) {
     this->internalNode = nullptr;
     this->leafNode = new LLeafNode(std::move(bv));
 }
@@ -146,7 +146,7 @@ bool LTree::access(unsigned long n, vector<LNesbo> *path) {
 bool LTree::setBit(unsigned long n, bool b, vector<LNesbo> *path) {
     // Find the leaf node that contains this bit
     auto entry = findLeaf(n, path);
-    BitVector &bv = entry.P->node.leafNode->bv;
+    BitVector<> &bv = entry.P->node.leafNode->bv;
     bool changed = bv.set(n - entry.b, b);
 
     return changed;
@@ -432,8 +432,8 @@ void LTree::moveLeftLeaf() {
     unsigned long idx = indexInParent;
     LTree *sibling = parent->node.internalNode->entries[idx - 1].P;
     // Take the first k*k block of `this`, and append it to `sibling`
-    BitVector &right = node.leafNode->bv;
-    BitVector &left = sibling->node.leafNode->bv;
+    BitVector<> &right = node.leafNode->bv;
+    BitVector<> &left = sibling->node.leafNode->bv;
     unsigned long d_b = block;
     left.append(right, 0, block);
     right.erase(0, block);
@@ -447,8 +447,8 @@ void LTree::moveRightLeaf() {
     unsigned long idx = indexInParent;
     LTree *sibling = parent->node.internalNode->entries[idx + 1].P;
     // Take the first k*k block of `this`, and append it to `sibling`
-    BitVector &left = node.leafNode->bv;
-    BitVector &right = sibling->node.leafNode->bv;
+    BitVector<> &left = node.leafNode->bv;
+    BitVector<> &right = sibling->node.leafNode->bv;
     unsigned long hi = left.size();
     unsigned long lo = hi - block;
     unsigned long d_b = block;
@@ -498,7 +498,7 @@ LTree *LTree::splitLeaf() {
     unsigned long mid = n / 2;
     mid -= mid % block;
     auto &left = this->node.leafNode->bv;
-    auto right = BitVector(left, mid, n);
+    auto right = BitVector<>(left, mid, n);
     left.erase(mid, n);
     auto *newNode = new LTree(right);
     if (parent == nullptr) {
