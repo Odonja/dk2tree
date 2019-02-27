@@ -191,11 +191,11 @@ LTree *LTree::deleteBits(long unsigned index, long unsigned count,
 }
 
 LTree *LTree::insertBlock(long unsigned index, vector<LNesbo> *path) {
-    return this->insertBits(index, block, path);
+    return this->insertBits(index, BLOCK_SIZE, path);
 }
 
 LTree *LTree::deleteBlock(long unsigned index, vector<LNesbo> *path) {
-    return this->deleteBits(index, block, path);
+    return this->deleteBits(index, BLOCK_SIZE, path);
 }
 
 unsigned long LTree::depth() {
@@ -224,7 +224,7 @@ unsigned long LTree::height() {
 
 unsigned long LTree::size() {
     if (isLeaf) {
-        return node.leafNode->bits() / block;
+        return node.leafNode->bits() / BLOCK_SIZE;
     } else {
         return node.internalNode->size;
     }
@@ -434,9 +434,9 @@ void LTree::moveLeftLeaf() {
     // Take the first k*k block of `this`, and append it to `sibling`
     BitVector<> &right = node.leafNode->bv;
     BitVector<> &left = sibling->node.leafNode->bv;
-    unsigned long d_b = block;
-    left.append(right, 0, block);
-    right.erase(0, block);
+    unsigned long d_b = BLOCK_SIZE;
+    left.append(right, 0, BLOCK_SIZE);
+    right.erase(0, BLOCK_SIZE);
 
     // Update the parent's b counter
     parent->node.internalNode->entries[idx].b -= d_b;
@@ -450,8 +450,8 @@ void LTree::moveRightLeaf() {
     BitVector<> &left = node.leafNode->bv;
     BitVector<> &right = sibling->node.leafNode->bv;
     unsigned long hi = left.size();
-    unsigned long lo = hi - block;
-    unsigned long d_b = block;
+    unsigned long lo = hi - BLOCK_SIZE;
+    unsigned long d_b = BLOCK_SIZE;
     right.insert(0, left, lo, hi);
     left.erase(lo, hi);
 
@@ -496,7 +496,7 @@ LTree *LTree::splitInternal() {
 LTree *LTree::splitLeaf() {
     unsigned long n = this->node.leafNode->bits();
     unsigned long mid = n / 2;
-    mid -= mid % block;
+    mid -= mid % BLOCK_SIZE;
     auto &left = this->node.leafNode->bv;
     auto right = BitVector<>(left, mid, n);
     left.erase(mid, n);
