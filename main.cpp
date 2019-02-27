@@ -1,8 +1,16 @@
 #include "gtest/gtest.h"
-#include "AdjacencyMatrix.h"
+
 #include "LargeGraphTest.cpp"
+
 #include "AdjacencyLists.h"
-#include "DKTree.h"
+#include "AdjacencyMatrix.h"
+#include "DKTree.cpp"
+
+#include "AdjacencyListsTest.cpp"
+#include "AdjacencyMatrixTest.cpp"
+#include "BitVectorTest.cpp"
+#include "DKTreeTest.cpp"
+#include "TTreeTest.cpp"
 
 void doLargeTests();
 

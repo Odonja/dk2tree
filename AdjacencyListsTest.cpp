@@ -4,7 +4,7 @@
 
 #include <cstdio>
 #include "gtest/gtest.h"
-#include "AdjacencyLists.h"
+#include "AdjacencyLists.cpp"
 #include <iostream>
 
 void validate(const AdjacencyLists &a) {
