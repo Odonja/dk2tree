@@ -174,6 +174,7 @@ struct BitVector {
     void
     insert(unsigned long begin, const BitVector<LENGTH> &from, unsigned long lo,
            unsigned long hi) {
+        // TODO speed up
         insert(begin, hi - lo);
         for (u64 idx = 0; idx + lo < hi; idx++) {
             set(idx + begin, from[idx + lo]);
@@ -260,11 +261,17 @@ struct BitVector {
      * @param lo the start of the range of bits to take
      * @param hi the end of the range of bits to take
      */
-    BitVector(const BitVector &from, unsigned long lo, unsigned long hi) :
-            bits(0),
+    BitVector(const BitVector<LENGTH> &from, unsigned long lo, unsigned long hi) :
+            bits(from.bits),
             data{0},
             block_counts{0} {
-        insert(0, from, lo, hi);
+        for (u8 idx = 0; idx < LENGTH; idx++) {
+            data[idx] = from.data[idx];
+            block_counts[idx] = from.block_counts[idx];
+        }
+        erase(hi, bits);
+        erase(0, lo);
+
     }
 
     unsigned long memoryUsage() {
