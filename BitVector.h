@@ -289,14 +289,12 @@ private:
     }
 
     unsigned long countOnesRaw(unsigned long lo, unsigned long hi) {
-        // TODO speed up
-        u64 tot = 0;
-        for (u64 i = lo; i < hi; i++) {
-            if ((*this)[i]) {
-                tot++;
-            }
-        }
-        return tot;
+        u64 block = lo / 64;
+        lo -= block * 64;
+        hi -= block * 64;
+
+        u64 mask = ((1ULL << (hi - lo)) - 1) << (64 - hi);
+        return ones(data[block] & mask);
     }
 
     unsigned long countBlocks(unsigned long lo, unsigned long hi) {
