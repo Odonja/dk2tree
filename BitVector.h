@@ -113,7 +113,7 @@ struct BitVector {
 
         // We save the first block, so we can set everything but the part to be
         // moved to zero, simplifying the rest
-        u64 first_part_mask = (begin % 64 == 0) ? ~0ULL : (1ULL << (64 - begin % 64)) - 1;
+        u64 first_part_mask = (2ULL << (63 - begin % 64)) - 1;
         u64 first_block_keep = data[block_start] & ~first_part_mask;
         data[block_start] &= first_part_mask;
 
@@ -187,7 +187,7 @@ struct BitVector {
 
         // We save the first block, so we can set everything but the part to be
         // moved to zero, simplifying the rest
-        u64 first_part_mask = (lo % 64 == 0) ? ~0ULL : (1ULL << (64 - lo % 64)) - 1;
+        u64 first_part_mask = (2ULL << (63 - lo % 64)) - 1;
         u64 first_block_keep = data[block_start] & ~first_part_mask;
         data[block_start] &= first_part_mask;
 
