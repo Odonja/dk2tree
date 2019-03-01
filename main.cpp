@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "LargeGraphTest.cpp"
+#include "MakeGraphFromFile.cpp"
 
 #include "AdjacencyLists.h"
 #include "AdjacencyMatrix.h"
@@ -20,7 +21,9 @@ int main(int argc, char **argv) {
     if (k != 0) {
         return k;
     }
-    doLargeTests(true);
+//    doLargeTests(true);
+    auto tree = makeGraphFromFile("datasets/eu-2005.txt", true);
+    std::cout << tree->memoryUsage() << std::endl;
 }
 
 void doLargeTests(bool verbose) {
