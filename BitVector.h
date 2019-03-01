@@ -52,7 +52,7 @@ u64 ones(u64 n) {
  * A simple bitvector containing the `raw` bits in a vector<bool>, as well as
  * a list of the number of ones in each block, to speed up rank operations
  */
-template<unsigned long LENGTH = (B + 63) / 64 + 1>
+template<unsigned long LENGTH = (B + BLOCK_SIZE + 63) / 64>
 struct BitVector {
     u64 bits;
     u64 data[LENGTH];
