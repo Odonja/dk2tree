@@ -33,7 +33,7 @@ u64 ones(u64 n) {
  * A simple bitvector containing the `raw` bits in a vector<bool>, as well as
  * a list of the number of ones in each block, to speed up rank operations
  */
-template <unsigned long LENGTH = (B + 63) / 64 + 1>
+template<unsigned long LENGTH = (B + 63) / 64 + 1>
 struct BitVector {
     u64 bits;
     u64 data[LENGTH];
@@ -62,7 +62,7 @@ struct BitVector {
         u64 block = n / 64;
         u64 mask = MAX_BIT >> (n % 64);
 
-        bool changed = ((data[block] & mask) != 0) ^ b;
+        bool changed = ((data[block] & mask) != 0) ^b;
 
         if (changed) {
             if (b) {
@@ -97,7 +97,8 @@ struct BitVector {
             return countOnesRaw(lo, hi);
         }
         unsigned long blockStart = blockLo * 64, blockEnd = blockHi * 64;
-        return countOnesRaw(lo, blockStart) + countBlocks(blockLo, blockHi) + countOnesRaw(blockEnd, hi);
+        return countOnesRaw(lo, blockStart) + countBlocks(blockLo, blockHi) +
+               countOnesRaw(blockEnd, hi);
     }
 
     /**
@@ -118,7 +119,8 @@ struct BitVector {
 
         // First, shift by whole number of blocks if applicable
         if (block_amount != 0) {
-            for (u64 idx = LENGTH - 1; idx >= block_start + block_amount; idx--) {
+            for (u64 idx = LENGTH - 1;
+                 idx >= block_start + block_amount; idx--) {
                 data[idx] = data[idx - block_amount];
                 data[idx - block_amount] = 0;
             }
@@ -150,7 +152,9 @@ struct BitVector {
      * @param lo the start of the range in `from` to insert
      * @param hi the end of the range in `from` to insert
      */
-    void insert(unsigned long begin, const BitVector<LENGTH> &from, unsigned long lo, unsigned long hi) {
+    void
+    insert(unsigned long begin, const BitVector<LENGTH> &from, unsigned long lo,
+           unsigned long hi) {
         insert(begin, hi - lo);
         for (u64 idx = 0; idx + lo < hi; idx++) {
             set(idx + begin, from[idx + lo]);
@@ -238,10 +242,9 @@ struct BitVector {
      * @param hi the end of the range of bits to take
      */
     BitVector(const BitVector &from, unsigned long lo, unsigned long hi) :
-        bits(0),
-        data{0},
-        block_counts{0}
-        {
+            bits(0),
+            data{0},
+            block_counts{0} {
         insert(0, from, lo, hi);
     }
 
