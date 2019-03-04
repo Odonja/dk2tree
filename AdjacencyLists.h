@@ -41,6 +41,10 @@ public:
 
     unsigned long memoryUsage();
 
+    static AdjacencyLists *withSize(unsigned long size) {
+        return new AdjacencyLists(size);
+    }
+
 private:
     void checkArgument(unsigned long k, string functionName) const;
 };

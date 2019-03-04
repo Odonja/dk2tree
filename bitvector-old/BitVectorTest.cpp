@@ -8,12 +8,15 @@
 #include "BitVector.h"
 #include "gtest/gtest.h"
 
-template <unsigned long LENGTH>
-bool validate(BitVector<LENGTH> &bv) {
-    unsigned long n = bv.size();
-    for (unsigned long b = 0; b < LENGTH; b++) {
+bool validate(BitVector &bv) {
+    unsigned long n = bv.size(), nb = (n + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    EXPECT_EQ(nb, bv.block_counts.size());
+    if (nb != bv.block_counts.size()) {
+        return false;
+    }
+    for (unsigned long b = 0; b < nb; b++) {
         unsigned long tot = 0;
-        for (unsigned long k = 64 * b; k < 64 * (b + 1); k++) {
+        for (unsigned long k = BLOCK_SIZE * b; k < BLOCK_SIZE * (b + 1); k++) {
             if (k < n && bv[k]) {
                 tot++;
             }
@@ -27,8 +30,8 @@ bool validate(BitVector<LENGTH> &bv) {
 }
 
 TEST(BitVectorTest, ReadWrite) {
-    const unsigned long size = 512;
-    BitVector<size / 64> bv(size);
+    unsigned long size = 512;
+    BitVector bv(size);
     unsigned long toFlip[] = {
             0, 1, 8, 9, 12, 21, 30, 35, 38, 50, 51, 63, 65, 66, 73, 74,
             83, 89, 100, 106, 107, 108, 109, 110, 120, 132, 148, 149, 153, 165, 167, 175,
@@ -64,9 +67,8 @@ TEST(BitVectorTest, ReadWrite) {
 }
 
 TEST(BitVectorTest, InsertDelete) {
-    const unsigned long size = 512;
-    const unsigned long LENGTH = (size + 100 + 63) / 64;
-    BitVector<LENGTH> bv(size);
+    unsigned long size = 512;
+    BitVector bv(size);
     bv.set(100, true);
     EXPECT_EQ(bv.rank1(100), 0);
     EXPECT_EQ(bv.rank1(101), 1);
@@ -99,9 +101,9 @@ TEST(BitVectorTest, InsertDelete) {
  * Then verify that all access and rank operations are correct
  */
 TEST(BitVectorTest, Patterns) {
-    const unsigned long size = 512;
+    unsigned long size = 512;
     for (unsigned long k = 1; k < size; k++) {
-        BitVector<size / 64> bv(size);
+        BitVector bv(size);
         for (unsigned long i = k - 1; i < size; i += k) {
             bv.set(i, true);
         }

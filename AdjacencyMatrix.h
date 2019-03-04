@@ -40,6 +40,10 @@ public:
 
     unsigned long memoryUsage();
 
+    static AdjacencyMatrix *withSize(unsigned long size) {
+        return new AdjacencyMatrix(size);
+    }
+
 private:
     void checkArgument(unsigned long k, string functionName) const;
 };

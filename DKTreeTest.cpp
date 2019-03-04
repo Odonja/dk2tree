@@ -19,7 +19,7 @@ namespace {
         DKTree dktree;
         dktree.printtt();
         // ttree vd dktree is een leaf node met k^2 nullen
-        BitVector b(3);
+        BitVector<> b(3);
         b.set(2, true);
         ASSERT_EQ(1, b.rank1(3));
     }

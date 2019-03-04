@@ -10,13 +10,13 @@
 #include <functional>
 #include <thread>
 
-std::default_random_engine generator((unsigned long) std::chrono::steady_clock::now().time_since_epoch().count());
-std::uniform_real_distribution<double> distribution(0.0, 1.0);
+std::default_random_engine generator(
+        (unsigned long) std::chrono::steady_clock::now().time_since_epoch().count());
+std::uniform_int_distribution<unsigned long> distribution(0,
+                                                          0xFFFFFFFFFFFFFFFF);
 
-static auto randomUniform = std::bind(distribution, generator);
-
-bool bernoulli(double p) {
-    return randomUniform() < p;
+unsigned long randRange(unsigned long lo, unsigned long hi) {
+    return lo + distribution(generator) % (hi - lo);
 }
 
 class Timer {
@@ -36,36 +36,39 @@ public:
     }
 };
 
-template <typename G>
-void largeTest(unsigned long size, double p) {
-    printf("Size: %lu, p: %f\n", size, p);
-
+template<typename G>
+G *largeTest(unsigned long size, unsigned long m, bool verbose = false) {
     Timer t;
     t.start();
-    G g;
+    G *g = G::withSize(size);
     t.stop();
     printf("Initialisation: %f seconds\n", t.read());
-    t.start();
-    for (unsigned long k = 0; k < size; k++) {
-        g.insertEntry();
-    }
-    t.stop();
-    printf("Inserting entries: %f seconds\n", t.read());
-    t.start();
-    unsigned long n = 0;
-    for (unsigned long i = 0; i < size; i++) {
-//        printf("%lu\n", i);
-        for (unsigned long j = 0; j < size; j++) {
-            if (bernoulli(p)) {
-                g.addEdge(i, j);
-                n++;
+    if (verbose) {
+        t.start();
+        for (unsigned long k = 1; k <= m; k++) {
+            if (k % 10000 == 0) {
+                printf("%lu / %lu\r", k, m);
             }
+            unsigned long i = randRange(0, size);
+            unsigned long j = randRange(0, size);
+            g->addEdge(i, j);
         }
+        t.stop();
+    } else {
+        t.start();
+        for (unsigned long k = 1; k <= m; k++) {
+            unsigned long i = randRange(0, size);
+            unsigned long j = randRange(0, size);
+            g->addEdge(i, j);
+        }
+        t.stop();
     }
-    t.stop();
     printf("Adding edges: %f seconds\n", t.read());
-    printf("Size in memory: %lu bytes\n", g.memoryUsage());
-    printf("Edges: %lu\n", n);
+    printf("Size in memory: %lu bytes\n", g->memoryUsage());
+    unsigned long i = randRange(0, size);
+    unsigned long j = randRange(0, size);
+    printf("%i\n", g->reportEdge(i, j));
+    return g;
 }
 
 #endif // DK2TREE_LARGE_GRAPH_TEST

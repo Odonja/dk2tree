@@ -9,7 +9,9 @@
 #include <utility>
 #include <bits/stdc++.h>
 
-#include "TTree.h"
+#include "TTree.cpp"
+#include "LTree.cpp"
+#include "parameters.cpp"
 
 // a class that contains a vector of entries in the matrix
 // with a start and end such that the entries at index start <= i < end are all in the same block at when
@@ -36,14 +38,12 @@ class DKTree final {
 private:
 
     TTree *ttree; // the tree whose leaves contain the internal nodes of the k2 tree
-    TTree *ltree; // the tree whose leaves contain the leave nodes of the k2 tree
+    LTree *ltree; // the tree whose leaves contain the leave nodes of the k2 tree
     vector<Nesbo> tPath;
-    vector<Nesbo> lPath;
+    vector<LNesbo> lPath;
     std::vector<unsigned long> freeColumns; // contains the entries in the matrix  below firstFreeColumn that are not in use
     unsigned long firstFreeColumn; // the lowest index above the used entries
     unsigned long matrixSize; // current size of the matrix, is a power of k
-    static constexpr unsigned long k = 2;
-    static constexpr unsigned long k2 = k * k; //k square
 
 public:
 
@@ -116,12 +116,29 @@ public:
 
     unsigned long memoryUsage();
 
+    static DKTree *withSize(unsigned long size) {
+        unsigned long n = 1, power = 0;
+        while (n < size) {
+            power++;
+            n *= k;
+        }
+        auto result = new DKTree(power);
+        result->firstFreeColumn = size;
+        return result;
+    }
+
 private:
     /**
-    * prints the leaf nodes of the input tree
+    * prints the leaf nodes of the input TTree
     * @param tree the tree to be printed
     */
-    void printtree(TTree *tree, unsigned long depth = 0);
+    void printttree(TTree *tree, unsigned long depth = 0);
+
+    /**
+    * prints the leaf nodes of the input LTree
+    * @param tree the tree to be printed
+    */
+    void printltree(LTree *tree, unsigned long depth = 0);
 
     /**
     * Calculates the offset of a row and column in a block at iteration iteration
