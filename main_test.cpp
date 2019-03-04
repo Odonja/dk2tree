@@ -24,6 +24,9 @@ int main(int argc, char **argv) {
 //    doLargeTests(true);
     auto tree = makeGraphFromFile("datasets/eu-2005.txt", true);
     std::cout << tree->memoryUsage() << std::endl;
+
+    delete tree;
+    return 0;
 }
 
 void doLargeTests(bool verbose) {
