@@ -1,47 +1,25 @@
-#include "gtest/gtest.h"
+#include <iostream>
+#include <fstream>
+using namespace std;
 
-#include "LargeGraphTest.cpp"
+#include "DKTree.cpp"
 #include "MakeGraphFromFile.cpp"
 
-#include "AdjacencyLists.h"
-#include "AdjacencyMatrix.h"
-#include "DKTree.cpp"
-
-#include "AdjacencyListsTest.cpp"
-#include "AdjacencyMatrixTest.cpp"
-#include "BitVectorTest.cpp"
-#include "DKTreeTest.cpp"
-#include "TTreeTest.cpp"
-
-void doLargeTests(bool);
-
 int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    int k = RUN_ALL_TESTS();
-    if (k != 0) {
-        return k;
+    if(argc != 3){
+        std::cout << "error: invalid number of arguments" << std::endl;
+        std::cout << "expected: dk2tree inputfilename outputfilename" << std::endl;
+        return 1;
     }
-//    doLargeTests(true);
-    auto tree = makeGraphFromFile("datasets/eu-2005.txt", true);
-    std::cout << tree->memoryUsage() << std::endl;
+    ofstream myfile;
+    myfile.open (argv[2], ios::app);
+    myfile << argv[1] <<" started processing"<< std::endl;
+
+    auto tree = makeGraphFromFile(argv[1]);
+
+    myfile << argv[1] <<" has size: " <<  tree->memoryUsage() << std::endl ;
+    myfile.close();
+    return 0;
 }
 
-void doLargeTests(bool verbose) {
-    std::cout << ::getpid() << std::endl;
 
-    unsigned long size = 100000;
-    unsigned long m = size * 50;
-    printf("Size: %lu, m: %lu\n", size, m);
-
-//    printf("\nAdjacency matrix:\n");
-//    auto matrix = largeTest<AdjacencyMatrix>(size, m, verbose);
-//    delete matrix;
-
-//    printf("\nAdjacency lists:\n");
-//    auto graph = largeTest<AdjacencyLists>(size, m, verbose);
-//    delete graph;
-
-    printf("\ndk2tree:\n");
-    auto tree = largeTest<DKTree>(size, m, verbose);
-    delete tree;
-}
