@@ -5,6 +5,7 @@
 #include "AdjacencyLists.h"
 #include <sstream>
 #include "BinarySearch.cpp"
+#include <algorithm>
 
 AdjacencyLists::AdjacencyLists() :
     size(0),
