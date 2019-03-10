@@ -37,6 +37,8 @@ public:
 
     bool reportEdge(unsigned long a, unsigned long b) const;
 
+    vector<std::pair<unsigned long, unsigned long>> reportAllEdges(const vector<unsigned long> &A, const vector<unsigned long> &B);
+
     const vector<unsigned long> neighbours(unsigned long a) const;
 
     unsigned long memoryUsage();
@@ -47,6 +49,8 @@ public:
 
 private:
     void checkArgument(unsigned long k, string functionName) const;
+
+    void sortAndCheckVector(vector<unsigned long> &) const;
 };
 
 

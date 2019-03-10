@@ -92,3 +92,46 @@ unsigned long AdjacencyLists::memoryUsage() {
     }
     return result;
 }
+
+void AdjacencyLists::sortAndCheckVector(vector<unsigned long> &elements) const {
+    if (elements.empty()) {
+        std::stringstream error;
+        error << "sortAndCheckVector: invalid argument, empty input vector \n";
+        throw std::invalid_argument(error.str());
+    }
+    // sort and delete doubles
+    sort(elements.begin(), elements.end());
+    elements.erase(unique(elements.begin(), elements.end()), elements.end());
+    std::string functionname = "reportAllEdges";
+    for (auto elemt:elements) {
+        checkArgument(elemt, functionname);
+    }
+}
+
+vector<std::pair<unsigned long, unsigned long>>
+AdjacencyLists::reportAllEdges(const vector<unsigned long> &A,
+                               const vector<unsigned long> &B) {
+    vector<unsigned long> rows(A);
+    vector<unsigned long> columns(B);
+    sortAndCheckVector(rows);
+    sortAndCheckVector(columns);
+
+    vector<std::pair<unsigned long, unsigned long>> result;
+
+    for (auto row : rows) {
+        unsigned long idx = 0;
+        for (auto b : lists[row]) {
+            while (b > columns[idx]) {
+                idx++;
+                if (idx == columns.size()) {
+                    break;
+                }
+            }
+            if (b == columns[idx]) {
+                result.emplace_back(row, b);
+            }
+        }
+    }
+
+    return result;
+}

@@ -117,3 +117,24 @@ TEST(AdjLists, LargeGraphWithRemovals) {
     ASSERT_FALSE(a.reportEdge(toDelete, toDelete));
     validate(a);
 }
+
+TEST(AdjLists, RangeQuery) {
+    unsigned long size = 16;
+    AdjacencyLists a(size);
+    for (unsigned long i = 1; i < size; i++) {
+        a.addEdge(i, i - 1);
+        a.addEdge(i - 1, i);
+    }
+    vector<unsigned long> x, y;
+    for (unsigned long i = 0; i < size; i++) {
+        x.push_back(i);
+        y.push_back(i);
+    }
+    auto edges = a.reportAllEdges(x, y);
+    ASSERT_EQ(edges.size(), 2 * size - 2);
+    for (auto edge : edges) {
+        auto u = (long) get<0>(edge);
+        auto v = (long) get<1>(edge);
+        ASSERT_EQ(abs(u - v), 1);
+    }
+}
