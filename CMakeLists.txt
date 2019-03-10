@@ -25,3 +25,7 @@ target_link_libraries(dk2tree LINK_PUBLIC gtest Threads::Threads stdc++)
 add_executable(adjacencylist mainAdjacencyList.cpp)
 #target_link_libraries(dk2tree LINK_PUBLIC sdsl divsufsort divsufsort64 gtest Threads::Threads)
 target_link_libraries(adjacencylist LINK_PUBLIC gtest Threads::Threads stdc++)
+
+add_executable(dk2treekb mainkb.cpp)
+#target_link_libraries(dk2tree LINK_PUBLIC sdsl divsufsort divsufsort64 gtest Threads::Threads)
+target_link_libraries(dk2treekb LINK_PUBLIC gtest Threads::Threads stdc++)

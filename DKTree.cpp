@@ -502,7 +502,7 @@ DKTree::calculateOffset(const unsigned long row, const unsigned long column, con
 void DKTree::checkArgument(unsigned long a, std::string functionName) {
     if (a >= firstFreeColumn) {
         std::stringstream error;
-        error << functionName << ": invalid argument " << a << ", position not occupied in matrix\n";
+        error << functionName << ": invalid argument " << a << ", position not occupied in matrix, firstfreecolumn = "<< firstFreeColumn <<"\n";
         throw std::invalid_argument(error.str());
     } else if (a < 0) {
         std::stringstream error;

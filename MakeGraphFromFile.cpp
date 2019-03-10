@@ -19,7 +19,7 @@ DKTree *makeGraphFromFile(const string &name, bool verbose = false) {
     auto tree = new DKTree();
     unsigned long size = 0;
     unsigned long n = 1;
-
+    tree->insertEntry();
     // Read the two integer from each line, as long as that is possible
     unsigned long a, b;
     while (file >> a >> b) {
@@ -28,7 +28,6 @@ DKTree *makeGraphFromFile(const string &name, bool verbose = false) {
             std::cout.flush();
         }
         n++;
-
         // Make sure that the tree has nodes for a and b, so that we can connect
         // them properly
         while (a >= size || b >= size) {
@@ -38,5 +37,6 @@ DKTree *makeGraphFromFile(const string &name, bool verbose = false) {
         // Then add the edge
         tree->addEdge(a, b);
     }
+    file.close();
     return tree;
 }
