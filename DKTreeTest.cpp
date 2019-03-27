@@ -468,7 +468,7 @@ namespace {
         ASSERT_EQ(a, allEdges[1]);
     }
 
-    void graphWithXentriesRandomSet(unsigned long x){
+    void graphWithXEntriesRandomSet(unsigned long x){
         DKTree dktree;
         vector<unsigned long> insertedEntries;
         for (unsigned long i = 0; i < x; i++) {
@@ -499,7 +499,7 @@ namespace {
         }
     }
 
-    void graphWithXentriesRandomDeleteAndFind(unsigned long x){
+    void graphWithXEntriesRandomDeleteAndFind(unsigned long x){
         DKTree dktree;
         vector<unsigned long> insertedEntries;
         for (unsigned long i = 0; i < x; i++) {
@@ -548,27 +548,27 @@ namespace {
 
     TEST(DKTreeTest, randomThousandGraph){
         std::cout << "randomThousandGraph test\n";
-        graphWithXentriesRandomSet(1000);
+        graphWithXEntriesRandomSet(1000);
     }
 
     TEST(DKTreeTest, randomThousandGraphDeleteEntry){
         std::cout << "randomThousandGraphDeleteEntry test\n";
-        graphWithXentriesRandomDeleteAndFind(1000);
+        graphWithXEntriesRandomDeleteAndFind(1000);
     }
 
     TEST(DKTreeTest, randomTenThousandGraph){
         std::cout << "randomTenThousandGraph test\n";
-        graphWithXentriesRandomSet(10000);
+        graphWithXEntriesRandomSet(10000);
     }
 
     TEST(DKTreeTest, randomTenThousandGraphDeleteEntry){
         std::cout << "randomTenThousandGraphDeleteEntry test\n";
-        graphWithXentriesRandomDeleteAndFind(10000);
+        graphWithXEntriesRandomDeleteAndFind(10000);
     }
 
     TEST(DKTreeTest, randomHundredThousandGraphDeleteEntry){
         std::cout << "randomHundredThousandGraphDeleteEntry test\n";
-        graphWithXentriesRandomDeleteAndFind(100000);
+        graphWithXEntriesRandomDeleteAndFind(100000);
     }
 
 }

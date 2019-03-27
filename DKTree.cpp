@@ -44,20 +44,20 @@ void DKTree::addEdge(unsigned long row, unsigned long column) {
     unsigned long iteration = 1;
     // the first position is 0+offset of the first iteration
     unsigned long position = calculateOffset(row, column, iteration);;
-    bool centry = true; // to get the loop started
+    bool cEntry = true; // to get the loop started
 
-    // will change the values of iteration, position, and centry
-    traverseToFirst0OrEndOfTTree(row, column, iteration, position, centry);
+    // will change the values of iteration, position, and cEntry
+    traverseToFirst0OrEndOfTTree(row, column, iteration, position, cEntry);
 
     // if the last bit found in the ttree is a 1 then find the final result in the ltree and set it to 1
-    if (centry) {
+    if (cEntry) {
         unsigned long ltreePosition = position - ttree->bits();
         ltree->setBit(ltreePosition, true, &lPath);
     } else { // if not then change it to a 1 and insert new blocks where necessary
         ttree->setBit(position, true, &tPath);
         iteration++;
-        unsigned long blocksize = matrixSize / long_pow(k, iteration);
-        while (blocksize > 1) {
+        unsigned long blockSize = matrixSize / long_pow(k, iteration);
+        while (blockSize > 1) {
             // position +1 since paper has rank including the position, but function is exclusive position
             unsigned long insertAt = ttree->rank1(position + 1, &tPath) * BLOCK_SIZE;
             insertBlockTtree(insertAt);
@@ -65,22 +65,22 @@ void DKTree::addEdge(unsigned long row, unsigned long column) {
             position = insertAt + offset;
             ttree->setBit(position, true, &tPath);
             iteration++;
-            blocksize = matrixSize / long_pow(k, iteration);
+            blockSize = matrixSize / long_pow(k, iteration);
         }
         // position +1 since paper has rank including the position, but function is exclusive position
-        unsigned long lTreeinsertAt = (ttree->rank1(position + 1, &tPath) * BLOCK_SIZE) - ttree->bits();
-        insertBlockLtree(lTreeinsertAt);
+        unsigned long lTreeInsertAt = (ttree->rank1(position + 1, &tPath) * BLOCK_SIZE) - ttree->bits();
+        insertBlockLtree(lTreeInsertAt);
         unsigned long offset = calculateOffset(row, column, iteration);
-        position = lTreeinsertAt + offset;
+        position = lTreeInsertAt + offset;
         ltree->setBit(position, true, &lPath);
     }
 }
 
 
 void DKTree::removeEdge(unsigned long row, unsigned long column) {
-    const unsigned long POSITIONOFFIRST = 0;
-    const unsigned long FIRSTITERATION = 1;
-    deleteThisEdge(row, column, FIRSTITERATION, POSITIONOFFIRST);
+    const unsigned long POSITION_OF_FIRST = 0;
+    const unsigned long FIRST_ITERATION = 1;
+    deleteThisEdge(row, column, FIRST_ITERATION, POSITION_OF_FIRST);
 }
 
 bool DKTree::deleteThisEdge(const unsigned long row, const unsigned long column, const unsigned long iteration,
@@ -273,8 +273,8 @@ bool DKTree::deleteEdgesFromLTree(VectorData &rows, VectorData &columns) {
             ltree->setBit(nodePosition, false, &lPath);
         }
     }
-    for (unsigned long offst = 0; offst < BLOCK_SIZE && only0s; offst++) {
-        if (ltree->access(ltreeposition + offst, &lPath)) {
+    for (unsigned long offset = 0; offset < BLOCK_SIZE && only0s; offset++) {
+        if (ltree->access(ltreeposition + offset, &lPath)) {
             only0s = false;
         }
     }
@@ -471,15 +471,15 @@ void DKTree::printltree(LTree *tree, unsigned long depth) {
 }
 
 void DKTree::increaseMatrixSize() {
-    const unsigned long FIRSTBIT = 0;
+    const unsigned long FIRST_BIT = 0;
     // if the matrix is full, increase the size by multiplying with k
     matrixSize *= k;
     // position +1 since paper has rank including the position, but function is exclusive position
     if (ttree->rank1(BLOCK_SIZE, &tPath) > 0) {
         // if there already is a 1 somewhere in the matrix, add a new block
         // in front of the bitvector and set the first bit to 1
-        insertBlockTtree(FIRSTBIT);
-        ttree->setBit(FIRSTBIT, true, &tPath);
+        insertBlockTtree(FIRST_BIT);
+        ttree->setBit(FIRST_BIT, true, &tPath);
     }
 }
 
@@ -520,12 +520,12 @@ void DKTree::checkArgument(unsigned long a, std::string functionName) {
 }
 
 void DKTree::traverseToFirst0OrEndOfTTree(unsigned long row, unsigned long column, unsigned long &iteration,
-                                          unsigned long &position, bool &centry) {
+                                          unsigned long &position, bool &cEntry) {
     unsigned long tmax = ttree->bits();
     // while the current position is a 1 and the end of the ttree is not reached, access the next bit
-    while (centry && position < tmax) {
-        centry = ttree->access(position, &tPath);
-        if (centry) {
+    while (cEntry && position < tmax) {
+        cEntry = ttree->access(position, &tPath);
+        if (cEntry) {
             iteration++;
             unsigned long offset = calculateOffset(row, column, iteration);
             // position +1 since paper has rank including the position, but function is exclusive position
@@ -544,9 +544,9 @@ void DKTree::sortAndCheckVector(vector<unsigned long> &elements) {
     // sort and delete doubles
     sort(elements.begin(), elements.end());
     elements.erase(unique(elements.begin(), elements.end()), elements.end());
-    std::string functionname = "reportAllEdges";
-    for (auto elemt:elements) {
-        checkArgument(elemt, functionname);
+    std::string functionName = "reportAllEdges";
+    for (auto element:elements) {
+        checkArgument(element, functionName);
     }
 }
 
