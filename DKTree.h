@@ -74,7 +74,7 @@ public:
     void removeEdge(unsigned long row, unsigned long column);
 
     /**
-     *  Inserts a column/row at the first empty column/row in the maxtrix, or if none at the end.
+     *  Inserts a column/row at the first empty column/row in the matrix, or if none at the end.
      *  @return the position at which the column was inserted.
      */
     unsigned long insertEntry();
@@ -91,7 +91,7 @@ public:
     /**
      * Reports all edges between a element of A, and b element of B.
      * @param A non empty, contains the first element of the pairs to be reported
-     * @param B non empty, ontains the second element of the pairs to be reported
+     * @param B non empty, contains the second element of the pairs to be reported
      * @return All pairs <a,b> such that a is an element of A and b is an element of B
      * @throws illegal argument exception if A or B is empty or if any of the elements in A or B is not present in the matrix
      */
@@ -197,17 +197,17 @@ private:
     deleteThisEdge(unsigned long row, unsigned long column, unsigned long iteration, unsigned long positionOfFirst);
 
     /**
-    * Traverses the ttree along the path of the k2 in the ttree to the entry of row/column till a 0 is found or untill the end of the ttree is reached
+    * Traverses the ttree along the path of the k2 in the ttree to the entry of row/column till a 0 is found or until the end of the ttree is reached
     * @param row the row in the matrix of the entry to be searched
     * @param column the column in the matrix of the entry to be searched
     * @param iteration to calculate the offset
     * @param position location of the first bit of the block in iteration iteration in which the edge is present
-    * @param centry will contain true afterwards if the end of the ttree was reached, or false when a 0 was found
+    * @param cEntry will contain true afterwards if the end of the ttree was reached, or false when a 0 was found
     */
     void
     traverseToFirst0OrEndOfTTree(unsigned long row, unsigned long column, unsigned long &iteration,
                                  unsigned long &position,
-                                 bool &centry);
+                                 bool &cEntry);
 
     /**
    * Deletes the edge (positionOfFirst+offset) from the ltree
@@ -243,15 +243,15 @@ private:
     void sortAndCheckVector(vector<unsigned long> &element);
 
 /**
-   * For each offset calculate the first and last entrie in the vector belonging to that offset, or -1 if none
+   * For each offset calculate the first and last entry in the vector belonging to that offset, or -1 if none
    * @param entries to be split on offset
-   * @param partitionSize number of rows/columns beloning to each offset
-   * @param entrieStart to be filled with the start index for each offset or -1 if none
-   * @param entrieEnd to be filled with the end index for each offset or -1 if none
+   * @param partitionSize number of rows/columns belonging to each offset
+   * @param entryStart to be filled with the start index for each offset or -1 if none
+   * @param entryEnd to be filled with the end index for each offset or -1 if none
    */
     void
-    splitEntriesOnOffset(const VectorData &entries, unsigned long partitionSize, int *entrieStart,
-                         int *entrieEnd) const;
+    splitEntriesOnOffset(const VectorData &entries, unsigned long partitionSize, int *entryStart,
+                         int *entryEnd) const;
 
     /**
    * Finds all edges from row element of rows to column element of columns and stores them in findings
