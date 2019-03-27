@@ -601,5 +601,5 @@ unsigned long DKTree::memoryUsage() {
     printf("  TPath: %lu\n", tPathSize);
     printf("  LPath: %lu\n", lPathSize);
     printf("  Free Columns: %lu\n", freeSize);
-    return tSize + lSize + tPathSize + lPathSize + freeSize;
+    return base + tSize + lSize + tPathSize + lPathSize + freeSize;
 }
