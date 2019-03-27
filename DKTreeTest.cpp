@@ -551,20 +551,20 @@ namespace {
         graphWithXEntriesRandomDeleteAndFind(1000);
     }
 
-    TEST(DKTreeTest, randomTenThousandGraph){
-        std::cout << "randomTenThousandGraph test\n";
-        graphWithXEntriesRandomSet(10000);
-    }
-
-    TEST(DKTreeTest, randomTenThousandGraphDeleteEntry){
-        std::cout << "randomTenThousandGraphDeleteEntry test\n";
-        graphWithXEntriesRandomDeleteAndFind(10000);
-    }
-
-    TEST(DKTreeTest, randomHundredThousandGraphDeleteEntry){
-        std::cout << "randomHundredThousandGraphDeleteEntry test\n";
-        graphWithXEntriesRandomDeleteAndFind(100000);
-    }
+//    TEST(DKTreeTest, randomTenThousandGraph){
+//        std::cout << "randomTenThousandGraph test\n";
+//        graphWithXEntriesRandomSet(10000);
+//    }
+//
+//    TEST(DKTreeTest, randomTenThousandGraphDeleteEntry){
+//        std::cout << "randomTenThousandGraphDeleteEntry test\n";
+//        graphWithXEntriesRandomDeleteAndFind(10000);
+//    }
+//
+//    TEST(DKTreeTest, randomHundredThousandGraphDeleteEntry){
+//        std::cout << "randomHundredThousandGraphDeleteEntry test\n";
+//        graphWithXEntriesRandomDeleteAndFind(100000);
+//    }
 
 }
 #pragma clang diagnostic pop
