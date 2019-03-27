@@ -150,7 +150,7 @@ struct LLeafNode {
      * @param bv the BitVector<> to be moved into this leaf node
      */
     explicit LLeafNode(BitVector<> bv) :
-            bv(std::move(bv)) {}
+            bv(bv) {}
 
     /**
      * Get the total number of bits stored in this leaf node
@@ -206,7 +206,7 @@ struct LTree {
      */
     explicit LTree(BitVector<> bv) :
             isLeaf(true),
-            node(std::move(bv)) {}
+            node(bv) {}
 
     /**
      * Constructs an all-zeros leaf node with the specified size

@@ -19,7 +19,7 @@ LTree::Node::Node(LTree *P1, LTree *P2) {
 
 LTree::Node::Node(BitVector<> bv) {
     this->internalNode = nullptr;
-    this->leafNode = new LLeafNode(std::move(bv));
+    this->leafNode = new LLeafNode(bv);
 }
 
 LTree::Node::Node(unsigned long size) {
