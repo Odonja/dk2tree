@@ -18,6 +18,8 @@ typedef uint8_t u8;
 
 #define MAX_BIT (((u64) 1) << 63)
 
+// This static table contains the number of 1-bits in each 8-bit integer
+// It is used to allow very fast computation of one counts in larger integers
 static const u8 ONE_BITS[256] = {
         0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4,
         1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5,
@@ -37,6 +39,8 @@ static const u8 ONE_BITS[256] = {
         4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8
 };
 
+// Efficiently counts the number of 1-bits in a 64-bit integer using the table
+// defined above.
 u64 ones(u64 n) {
     return ONE_BITS[n & 0xFF]
            + ONE_BITS[(n >> 8) & 0xFF]
@@ -54,8 +58,15 @@ u64 ones(u64 n) {
  */
 template<unsigned long LENGTH = (B + BLOCK_SIZE + 63) / 64>
 struct BitVector {
+    /* The size of this bitvector in bits */
     u64 bits;
+
+    /* The array of integers representing the bitvector */
     u64 data[LENGTH];
+
+    /*
+     * For each index `i`, block_counts[i] stores the number of 1-bits in data[i]
+     */
     u8 block_counts[LENGTH];
 
     /**
@@ -101,8 +112,11 @@ struct BitVector {
      * @return the number of ones in the bits [0 ... n)
      */
     unsigned long rank1(unsigned long n) {
+        // First split the interval [0, n) up into a whole number of blocks and
+        // a remainder, then count the total number of bits
         unsigned long end_blocks = n - n % 64;
         unsigned long nr_blocks = end_blocks / 64;
+
         return countBlocks(0, nr_blocks) + countOnesRaw(end_blocks, n);
     }
 
@@ -137,6 +151,7 @@ struct BitVector {
         data[block_start] &= first_part_mask;
 
         // First, shift by whole number of blocks if applicable
+        // The `if` is necessary since data would be destroyed otherwise
         if (block_amount != 0) {
             for (u64 idx = LENGTH - 1;
                  idx >= block_start + block_amount; idx--) {
@@ -145,7 +160,9 @@ struct BitVector {
             }
         }
 
-        // Then, shift by the remaining number of bits
+        // Then, shift by the remaining number of bits if applicable
+        // The `if` is necessary since the code would otherwise perform bit-
+        // shifts by 64 bits, which is undefined behaviour
         if (bit_amount != 0) {
             for (u64 idx = LENGTH - 1; idx >= block_start + 1; idx--) {
                 data[idx] = (data[idx] >> bit_amount) |
@@ -154,9 +171,7 @@ struct BitVector {
             data[block_start] >>= bit_amount;
         }
 
-        // Finally, restore the first block
-        // We don't recompute the ones counts, since this method is only used by
-        // other methods that will recompute it
+        // Finally, restore the first block and recompute the block counts
         data[block_start] |= first_block_keep;
 
         bits += size;
@@ -174,7 +189,8 @@ struct BitVector {
     void
     insert(unsigned long begin, const BitVector<LENGTH> &from, unsigned long lo,
            unsigned long hi) {
-        // TODO speed up
+        // This can probably be done faster, but this operation usually only
+        // performed with [lo, hi) being a single k^2 block
         insert(begin, hi - lo);
         for (u64 idx = 0; idx + lo < hi; idx++) {
             set(idx + begin, from[idx + lo]);
@@ -238,7 +254,6 @@ struct BitVector {
 
     /**
      * Gets the size (number of bits) of this bit vector
-     * @return
      */
     unsigned long size() {
         return bits;
@@ -295,6 +310,14 @@ private:
         }
     }
 
+    /**
+     * Counts the number of 1-bits in the interval [lo, hi). This interval
+     * should be entirely in one b64-bit lock
+     *
+     * @param lo the start of the interval
+     * @param hi the end of the interval
+     * @return the number of 1-bits in the interval [lo, hi)
+     */
     unsigned long countOnesRaw(unsigned long lo, unsigned long hi) {
         u64 block = lo / 64;
         lo -= block * 64;
@@ -304,6 +327,12 @@ private:
         return ones(data[block] & mask);
     }
 
+    /**
+     * Counts the total number of ones in the blocks in interval [lo, hi)
+     * @param lo the start of the interval
+     * @param hi the end of the interval
+     * @return the number of 1-bits in the interval [lo, hi) of blocks
+     */
     unsigned long countBlocks(unsigned long lo, unsigned long hi) {
         unsigned long tot = 0;
         for (unsigned long k = lo; k < hi; k++) {
