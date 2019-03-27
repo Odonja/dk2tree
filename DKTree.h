@@ -19,8 +19,8 @@
 class VectorData {
 public:
     const vector<unsigned long> &entry;
-    int start;
-    int end;
+    unsigned long start;
+    unsigned long end;
     unsigned long iteration;
     unsigned long firstAt;
 
@@ -28,7 +28,7 @@ public:
     explicit VectorData(vector<unsigned long> &aEntry)
             : entry(aEntry), start(0), end(aEntry.size()), iteration(1), firstAt(0) {}
 
-    VectorData(VectorData &vectorData, int aStart, int aEnd, unsigned long aIteration, unsigned long aFirstAt)
+    VectorData(VectorData &vectorData, unsigned long aStart, unsigned long aEnd, unsigned long aIteration, unsigned long aFirstAt)
             : entry(vectorData.entry), start(aStart), end(aEnd), iteration(aIteration), firstAt(aFirstAt) {}
 };
 
