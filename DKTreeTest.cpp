@@ -67,12 +67,7 @@ namespace {
         try {
             dktree.reportEdge(positionA, unoccupiedPosition);
             ASSERT_FALSE(true); // should not be reached
-        } catch (const std::invalid_argument &e) {
-            std::stringstream error;
-            error << "reportEdge: invalid argument " << unoccupiedPosition << ", position not occupied in matrix\n";
-
-            ASSERT_EQ(error.str(), e.what());
-        }
+        } catch (const std::invalid_argument &e) { }
     }
 
     TEST(DKTreeTest, find1PosEdge) {
