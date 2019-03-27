@@ -451,10 +451,10 @@ namespace {
 
     TEST(DKTreeTest, testpairsort){
         vector<std::pair<unsigned long, unsigned long>> allEdges;
-        allEdges.push_back(std::pair<unsigned long, unsigned long>(6, 6));
-        allEdges.push_back(std::pair<unsigned long, unsigned long>(6, 2));
-        allEdges.push_back(std::pair<unsigned long, unsigned long>(4, 8));
-        allEdges.push_back(std::pair<unsigned long, unsigned long>(4, 9));
+        allEdges.emplace_back(6, 6);
+        allEdges.emplace_back(6, 2);
+        allEdges.emplace_back(4, 8);
+        allEdges.emplace_back(4, 9);
         sort(allEdges.begin(), allEdges.end());
         for (auto finding:allEdges) {
             std::cout << "<" << finding.first << ", " << finding.second << ">, ";
@@ -477,7 +477,7 @@ namespace {
                 int random = rand() % 100;
                 if(random == 9){
                     dktree.addEdge(i, j);
-                    allEdges.push_back(std::pair<unsigned long, unsigned long>(i, j));
+                    allEdges.emplace_back(i, j);
                 }
             }
         }
@@ -508,7 +508,7 @@ namespace {
                 int random = rand() % 100;
                 if(random == 9){
                     dktree.addEdge(i, j);
-                    allEdges.push_back(std::pair<unsigned long, unsigned long>(i, j));
+                    allEdges.emplace_back(i, j);
                 }
             }
         }
