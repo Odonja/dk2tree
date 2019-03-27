@@ -474,14 +474,14 @@ namespace {
         vector<std::pair<unsigned long, unsigned long>> allEdges;
         for (unsigned long i = 0; i < x; i++) {
             for (unsigned long j = 0; j < x; j++) {
-                unsigned long random = rand() % 100;
+                int random = rand() % 100;
                 if(random == 9){
                     dktree.addEdge(i, j);
                     allEdges.push_back(std::pair<unsigned long, unsigned long>(i, j));
                 }
             }
         }
-        int nrOfEdges = allEdges.size();
+        unsigned long nrOfEdges = allEdges.size();
         std::cout <<  nrOfEdges << " edges added\n";
         vector<std::pair<unsigned long, unsigned long>> findings = dktree.reportAllEdges(insertedEntries, insertedEntries);
         std::cout <<  "edges reported  \n";
@@ -505,14 +505,14 @@ namespace {
         vector<std::pair<unsigned long, unsigned long>> allEdges;
         for (unsigned long i = 0; i < x; i++) {
             for (unsigned long j = 0; j < x; j++) {
-                unsigned long random = rand() % 100;
+                int random = rand() % 100;
                 if(random == 9){
                     dktree.addEdge(i, j);
                     allEdges.push_back(std::pair<unsigned long, unsigned long>(i, j));
                 }
             }
         }
-        int nrOfEdges = allEdges.size();
+        unsigned long nrOfEdges = allEdges.size();
         std::cout <<  nrOfEdges << " edges added\n";
         vector<std::pair<unsigned long, unsigned long>> findings = dktree.reportAllEdges(insertedEntries, insertedEntries);
         std::cout <<  "edges reported  \n";
@@ -525,7 +525,7 @@ namespace {
         }
 
         unsigned long random = rand() % nrOfEdges;
-        int entryToBeDeleted = allEdges[random].first;
+        unsigned long entryToBeDeleted = allEdges[random].first;
         dktree.deleteEntry(entryToBeDeleted);
         insertedEntries.erase(insertedEntries.begin()+entryToBeDeleted);
         findings = dktree.reportAllEdges(insertedEntries, insertedEntries);

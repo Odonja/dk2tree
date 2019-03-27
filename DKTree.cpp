@@ -171,7 +171,7 @@ void DKTree::deleteEntry(unsigned long a) {
     for (unsigned long i = 0; i < firstFreeColumn; i++) {
         allOthers.push_back(i);
     }
-    for (int i = freeColumns.size() - 1; i >= 0; i--) {
+    for (long i = freeColumns.size() - 1; i >= 0; i--) {
         allOthers.erase(allOthers.begin() + freeColumns[i]);
     }
 
