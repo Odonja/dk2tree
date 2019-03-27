@@ -18,7 +18,7 @@ namespace {
         std::cout << "emptyTree test\n";
         DKTree dktree;
         dktree.printtt();
-        // ttree vd dktree is een leaf node met k^2 nullen
+        // ttree of the dktree is a leaf node with k^2 zeroes
         BitVector<> b(3);
         b.set(2, true);
         ASSERT_EQ(1, b.rank1(3));
@@ -30,7 +30,7 @@ namespace {
         unsigned long position = dktree.insertEntry();
         dktree.printtt();
         ASSERT_EQ(0, position);
-        // ttree vd dktree is een leaf node met k^2 nullen
+        // ttree of the dktree is a leaf node with k^2 zeroes
     }
 
     TEST(DKTreeTest, insertTwoEntries) {
@@ -40,7 +40,7 @@ namespace {
         unsigned long positionB = dktree.insertEntry();
         dktree.printtt();
         ASSERT_NE(positionA, positionB);
-        // a en b hebben een andere positie
+        // a and b must have different positions
     }
 
     TEST(DKTreeTest, findNoEdge) {
