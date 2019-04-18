@@ -14,75 +14,75 @@ int main(int argc, char **argv) {
         std::cout << "expected: dk2tree inputfilename outputfilename posEdges negEdges numberOfNodes" << std::endl;
         return 1;
     }
-    ofstream myfile;
-    myfile.open(argv[2], ios::app);
-    myfile << std::endl << "running " << argv[0] << std::endl;
-    myfile << "number of nodes = " << atoi(argv[5]) << std::endl;
-    myfile << "processing " << argv[1] << std::endl;
+    ofstream myFile;
+    myFile.open(argv[2], ios::app);
+    myFile << std::endl << "running " << argv[0] << std::endl;
+    myFile << "number of nodes = " << atoi(argv[5]) << std::endl;
+    myFile << "processing " << argv[1] << std::endl;
 
     auto tree = makeGraphFromFile(argv[1]);
 
-    myfile << argv[1] << " has size: " << tree->memoryUsage() << std::endl;
+    myFile << argv[1] << " has size: " << tree->memoryUsage() << std::endl;
 
     Timer timer;
     double average = 0;
     unsigned long counter = 0;
 
-    ifstream negEdgesfile(argv[4]);
+    ifstream negEdgesFile(argv[4]);
     unsigned long from, to;
-    while (negEdgesfile >> from >> to) {
+    while (negEdgesFile >> from >> to) {
         timer.start();
         tree->addEdge(from, to);
         timer.stop();
         counter++;
         average += timer.read();
     }
-    myfile << argv[1] << " average time to add an edge: " << average/counter << std::endl;
+    myFile << argv[1] << " average time to add an edge: " << average/counter << std::endl;
 
     average = 0;
     counter = 0;
-    negEdgesfile.clear();
-    negEdgesfile.seekg(0, ios::beg);
-    while (negEdgesfile >> from >> to) {
+    negEdgesFile.clear();
+    negEdgesFile.seekg(0, ios::beg);
+    while (negEdgesFile >> from >> to) {
         timer.start();
         tree->removeEdge(from, to);
         timer.stop();
         counter++;
         average += timer.read();
     }
-    myfile << argv[1] << " average time to delete an edge: " << average/counter << std::endl;
+    myFile << argv[1] << " average time to delete an edge: " << average/counter << std::endl;
 
 
     average = 0;
     counter = 0;
-    negEdgesfile.clear();
-    negEdgesfile.seekg(0, ios::beg);
-    while (negEdgesfile >> from >> to) {
+    negEdgesFile.clear();
+    negEdgesFile.seekg(0, ios::beg);
+    while (negEdgesFile >> from >> to) {
         timer.start();
         tree->reportEdge(from, to);
         timer.stop();
         counter++;
         average += timer.read();
     }
-    myfile << argv[1] << " average time to report 1 negative edge: " << average/counter << std::endl;
-    negEdgesfile.close();
+    myFile << argv[1] << " average time to report 1 negative edge: " << average/counter << std::endl;
+    negEdgesFile.close();
 
     average = 0;
     counter = 0;
-    ifstream posEdgesfile(argv[3]);
-    while (posEdgesfile >> from >> to) {
+    ifstream posEdgesFile(argv[3]);
+    while (posEdgesFile >> from >> to) {
         timer.start();
         tree->reportEdge(from, to);
         timer.stop();
         counter++;
         average += timer.read();
     }
-    myfile << argv[1] <<"average time to report 1 positive edge: " <<  average/counter << std::endl;
+    myFile << argv[1] <<"average time to report 1 positive edge: " <<  average/counter << std::endl;
 
-    posEdgesfile.close();
+    posEdgesFile.close();
 
 
-    unsigned long nrOfNodes = strtol(argv[5], NULL, 10);
+    unsigned long nrOfNodes = strtol(argv[5], nullptr, 10);
     vector<unsigned long> allNodes(nrOfNodes);
     for(unsigned long i = 0; i < nrOfNodes; i++){
         allNodes[i] = i;
@@ -96,9 +96,9 @@ int main(int argc, char **argv) {
         counter++;
         average += timer.read();
     }
-    myfile << argv[1] <<" average time to report all edges: " <<  average/counter << std::endl;
+    myFile << argv[1] <<" average time to report all edges: " <<  average/counter << std::endl;
 
-    myfile.close();
+    myFile.close();
     delete tree;
 
     return 0;

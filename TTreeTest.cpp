@@ -217,55 +217,6 @@ TEST(TTreeTest, AccessSetBit) {
     ASSERT_TRUE(validate(&node));
 }
 
-TEST(TTreeTest, AccessSetBit2) {
-    // Create example tree with 5 leaves and 2560 bits
-    // Note that this test creates a binary tree which may not be a valid B+Tree
-    // However, no insertions/deletions are done so the B+Tree-specific code is never executed
-    auto *l1 = new TTree(512);
-    auto *l2 = new TTree(512);
-    auto *l3 = new TTree(512);
-    auto *l4 = new TTree(512);
-    auto *l5 = new TTree(512);
-    auto *i4 = new TTree(l1, l2);
-    auto *i3 = new TTree(l4, l5);
-    auto *i2 = new TTree(i4, l3);
-    auto *root = new TTree(i2, i3);
-    // 100 randomly generated bits to flip with no consecutive entries
-    unsigned long toFlip[]{
-            5, 36, 60, 68, 98, 114, 116, 157, 226, 291,
-            350, 411, 480, 491, 493, 504, 523, 540, 588, 596,
-            616, 655, 662, 665, 676, 716, 724, 765, 793, 802,
-            830, 848, 883, 915, 941, 966, 978, 1053, 1059, 1085,
-            1095, 1166, 1203, 1217, 1227, 1239, 1259, 1262, 1373, 1399,
-            1408, 1419, 1441, 1462, 1464, 1470, 1480, 1502, 1506, 1520,
-            1597, 1687, 1690, 1700, 1762, 1766, 1773, 1790, 1810, 1827,
-            1874, 1893, 1903, 1907, 1923, 1967, 1985, 1996, 2003, 2023,
-            2026, 2028, 2172, 2184, 2233, 2257, 2330, 2353, 2375, 2405,
-            2410, 2416, 2425, 2427, 2437, 2446, 2495, 2511, 2514, 2517
-    };
-    for (auto i : toFlip) {
-        root->setBit(i, true);
-    }
-
-    ASSERT_TRUE(validate(root));
-    ASSERT_EQ(root->bits(), 2560);
-    ASSERT_EQ(root->ones(), 100);
-
-    // Check that access and rank operations return the correct results
-    unsigned long idx = 0;
-    for (long unsigned i = 0; i < 2560; i++) {
-        bool ac, ac2 = false;
-        unsigned long rk = root->rank1(i), rk2 = idx;
-        ac = root->access(i);
-        if (i == toFlip[idx]) {
-            ac2 = true;
-            idx++;
-        }
-        EXPECT_EQ(ac, ac2);
-        EXPECT_EQ(rk, rk2);
-    }
-}
-
 /**
  * Tests the insert() and delete() functions
  */

@@ -44,20 +44,20 @@ void DKTree::addEdge(unsigned long row, unsigned long column) {
     unsigned long iteration = 1;
     // the first position is 0+offset of the first iteration
     unsigned long position = calculateOffset(row, column, iteration);;
-    bool centry = true; // to get the loop started
+    bool cEntry = true; // to get the loop started
 
-    // will change the values of iteration, position, and centry
-    traverseToFirst0OrEndOfTTree(row, column, iteration, position, centry);
+    // will change the values of iteration, position, and cEntry
+    traverseToFirst0OrEndOfTTree(row, column, iteration, position, cEntry);
 
     // if the last bit found in the ttree is a 1 then find the final result in the ltree and set it to 1
-    if (centry) {
+    if (cEntry) {
         unsigned long ltreePosition = position - ttree->bits();
         ltree->setBit(ltreePosition, true, &lPath);
     } else { // if not then change it to a 1 and insert new blocks where necessary
         ttree->setBit(position, true, &tPath);
         iteration++;
-        unsigned long blocksize = matrixSize / long_pow(k, iteration);
-        while (blocksize > 1) {
+        unsigned long blockSize = matrixSize / long_pow(k, iteration);
+        while (blockSize > 1) {
             // position +1 since paper has rank including the position, but function is exclusive position
             unsigned long insertAt = ttree->rank1(position + 1, &tPath) * BLOCK_SIZE;
             insertBlockTtree(insertAt);
@@ -65,22 +65,22 @@ void DKTree::addEdge(unsigned long row, unsigned long column) {
             position = insertAt + offset;
             ttree->setBit(position, true, &tPath);
             iteration++;
-            blocksize = matrixSize / long_pow(k, iteration);
+            blockSize = matrixSize / long_pow(k, iteration);
         }
         // position +1 since paper has rank including the position, but function is exclusive position
-        unsigned long lTreeinsertAt = (ttree->rank1(position + 1, &tPath) * BLOCK_SIZE) - ttree->bits();
-        insertBlockLtree(lTreeinsertAt);
+        unsigned long lTreeInsertAt = (ttree->rank1(position + 1, &tPath) * BLOCK_SIZE) - ttree->bits();
+        insertBlockLtree(lTreeInsertAt);
         unsigned long offset = calculateOffset(row, column, iteration);
-        position = lTreeinsertAt + offset;
+        position = lTreeInsertAt + offset;
         ltree->setBit(position, true, &lPath);
     }
 }
 
 
 void DKTree::removeEdge(unsigned long row, unsigned long column) {
-    const unsigned long POSITIONOFFIRST = 0;
-    const unsigned long FIRSTITERATION = 1;
-    deleteThisEdge(row, column, FIRSTITERATION, POSITIONOFFIRST);
+    const unsigned long POSITION_OF_FIRST = 0;
+    const unsigned long FIRST_ITERATION = 1;
+    deleteThisEdge(row, column, FIRST_ITERATION, POSITION_OF_FIRST);
 }
 
 bool DKTree::deleteThisEdge(const unsigned long row, const unsigned long column, const unsigned long iteration,
@@ -109,7 +109,7 @@ bool DKTree::deleteTTreeEdge(const unsigned long row, const unsigned long column
     }
     ttree->setBit(positionOfFirst + offset, false, &tPath);
     if (iteration > 1) {
-        // if we arent in the first iteration, see if any of the nodes in this block is still true
+        // if we aren't in the first iteration, see if any of the nodes in this block is still true
         bool only0s = true;
         for (unsigned long i = 0; i < BLOCK_SIZE && only0s; i++) {
             if (ttree->access(positionOfFirst + i, &tPath)) {
@@ -171,7 +171,7 @@ void DKTree::deleteEntry(unsigned long a) {
     for (unsigned long i = 0; i < firstFreeColumn; i++) {
         allOthers.push_back(i);
     }
-    for (int i = freeColumns.size() - 1; i >= 0; i--) {
+    for (long i = freeColumns.size() - 1; i >= 0; i--) {
         allOthers.erase(allOthers.begin() + freeColumns[i]);
     }
 
@@ -212,7 +212,7 @@ bool DKTree::deleteEdges(VectorData &rows, VectorData &columns) {
         splitEntriesOnOffset(rows, partitionSize, rowStart, rowEnd);
         splitEntriesOnOffset(columns, partitionSize, columnStart, columnEnd);
 
-        // for each offset, there can be a relation if there is atleast one row and one column and if its value is not 0.
+        // for each offset, there can be a relation if there is at least one row and one column and if its value is not 0.
         for (int offset = BLOCK_SIZE - 1; offset >= 0; offset--) {
             unsigned long rowOffset = offset / k;
             // std::cout << "rowOffset " << rowOffset << "\n";
@@ -222,7 +222,7 @@ bool DKTree::deleteEdges(VectorData &rows, VectorData &columns) {
             bool nodeSubtreeHasEdges = ttree->access(currentNode, &tPath);
             if (nodeSubtreeHasEdges) {
                 if (!(rowStart[rowOffset] == -1 || columnStart[columnOffset] == -1)) {
-                    // there can only be a relation if there is atleast 1 element in both of them
+                    // there can only be a relation if there is at least 1 element in both of them
                     // rank function is exclusive so +1
                     unsigned long nextNode = ttree->rank1(currentNode + 1, &tPath) * BLOCK_SIZE;
                     // if there are edges in this subtree find the edges stored in the child nodes
@@ -273,8 +273,8 @@ bool DKTree::deleteEdgesFromLTree(VectorData &rows, VectorData &columns) {
             ltree->setBit(nodePosition, false, &lPath);
         }
     }
-    for (unsigned long offst = 0; offst < BLOCK_SIZE && only0s; offst++) {
-        if (ltree->access(ltreeposition + offst, &lPath)) {
+    for (unsigned long offset = 0; offset < BLOCK_SIZE && only0s; offset++) {
+        if (ltree->access(ltreeposition + offset, &lPath)) {
             only0s = false;
         }
     }
@@ -345,12 +345,12 @@ DKTree::findAllEdges(VectorData &rows, VectorData &columns,
         splitEntriesOnOffset(rows, partitionSize, rowStart, rowEnd);
         splitEntriesOnOffset(columns, partitionSize, columnStart, columnEnd);
 
-        // for each offset, there can be a relation if there is atleast one row and one column and if its value is not 0.
+        // for each offset, there can be a relation if there is at least one row and one column and if its value is not 0.
         for (unsigned long offset = 0; offset < BLOCK_SIZE; offset++) {
             unsigned long rowOffset = offset / k;
             unsigned long columnOffset = offset % k;
             if (!(rowStart[rowOffset] == -1 || columnStart[columnOffset] == -1)) {
-                // there can only be a relation if there is atleast 1 element in both of them
+                // there can only be a relation if there is at least 1 element in both of them
                 unsigned long currentNode = rows.firstAt + offset;
                 bool nodeSubtreeHasEdges = ttree->access(currentNode, &tPath);
                 if (nodeSubtreeHasEdges) {
@@ -393,22 +393,22 @@ void DKTree::findEdgesInLTree(const VectorData &rows, const VectorData &columns,
     }
 }
 
-void DKTree::splitEntriesOnOffset(const VectorData &entries, const unsigned long partitionSize, int *entrieStart,
-                                  int *entrieEnd) const {
+void DKTree::splitEntriesOnOffset(const VectorData &entries, const unsigned long partitionSize, int *entryStart,
+                                  int *entryEnd) const {
     const unsigned long formerPartitionSize = partitionSize * k;
     unsigned long offsetStarted;
     for (unsigned long i = entries.start; i < entries.end; i++) {
-        unsigned long entrieInBlock = entries.entry[i] % formerPartitionSize;
-        unsigned long entrieOffset = (entrieInBlock / partitionSize);
-        if (entrieStart[entrieOffset] == -1) {
-            entrieStart[entrieOffset] = i;
+        unsigned long entryInBlock = entries.entry[i] % formerPartitionSize;
+        unsigned long entryOffset = (entryInBlock / partitionSize);
+        if (entryStart[entryOffset] == -1) {
+            entryStart[entryOffset] = i;
             if (i > entries.start) {
-                entrieEnd[offsetStarted] = i;
+                entryEnd[offsetStarted] = i;
             }
-            offsetStarted = entrieOffset;
+            offsetStarted = entryOffset;
         }
         if (i == entries.end - 1) {
-            entrieEnd[offsetStarted] = i + 1;
+            entryEnd[offsetStarted] = i + 1;
         }
     }
 }
@@ -471,21 +471,21 @@ void DKTree::printltree(LTree *tree, unsigned long depth) {
 }
 
 void DKTree::increaseMatrixSize() {
-    const unsigned long FIRSTBIT = 0;
+    const unsigned long FIRST_BIT = 0;
     // if the matrix is full, increase the size by multiplying with k
     matrixSize *= k;
     // position +1 since paper has rank including the position, but function is exclusive position
     if (ttree->rank1(BLOCK_SIZE, &tPath) > 0) {
         // if there already is a 1 somewhere in the matrix, add a new block
         // in front of the bitvector and set the first bit to 1
-        insertBlockTtree(FIRSTBIT);
-        ttree->setBit(FIRSTBIT, true, &tPath);
+        insertBlockTtree(FIRST_BIT);
+        ttree->setBit(FIRST_BIT, true, &tPath);
     }
 }
 
 unsigned long
 DKTree::calculateOffset(const unsigned long row, const unsigned long column, const unsigned long iteration) {
-    // first remove the rows and columns not beloning to the current block
+    // first remove the rows and columns not belonging to the current block
     unsigned long formerPartitionSize = matrixSize / long_pow(k, iteration - 1);
     unsigned long rowInBlock = row % formerPartitionSize;
     unsigned long columnInBlock = column % formerPartitionSize;
@@ -520,12 +520,12 @@ void DKTree::checkArgument(unsigned long a, std::string functionName) {
 }
 
 void DKTree::traverseToFirst0OrEndOfTTree(unsigned long row, unsigned long column, unsigned long &iteration,
-                                          unsigned long &position, bool &centry) {
+                                          unsigned long &position, bool &cEntry) {
     unsigned long tmax = ttree->bits();
     // while the current position is a 1 and the end of the ttree is not reached, access the next bit
-    while (centry && position < tmax) {
-        centry = ttree->access(position, &tPath);
-        if (centry) {
+    while (cEntry && position < tmax) {
+        cEntry = ttree->access(position, &tPath);
+        if (cEntry) {
             iteration++;
             unsigned long offset = calculateOffset(row, column, iteration);
             // position +1 since paper has rank including the position, but function is exclusive position
@@ -544,9 +544,9 @@ void DKTree::sortAndCheckVector(vector<unsigned long> &elements) {
     // sort and delete doubles
     sort(elements.begin(), elements.end());
     elements.erase(unique(elements.begin(), elements.end()), elements.end());
-    std::string functionname = "reportAllEdges";
-    for (auto elemt:elements) {
-        checkArgument(elemt, functionname);
+    std::string functionName = "reportAllEdges";
+    for (auto element:elements) {
+        checkArgument(element, functionName);
     }
 }
 
@@ -601,5 +601,5 @@ unsigned long DKTree::memoryUsage() {
     printf("  TPath: %lu\n", tPathSize);
     printf("  LPath: %lu\n", lPathSize);
     printf("  Free Columns: %lu\n", freeSize);
-    return tSize + lSize + tPathSize + lPathSize + freeSize;
+    return base + tSize + lSize + tPathSize + lPathSize + freeSize;
 }
