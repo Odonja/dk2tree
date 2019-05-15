@@ -15,13 +15,7 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 add_executable(dk2tree_test main_test.cpp)
-#target_link_libraries(dk2tree LINK_PUBLIC sdsl divsufsort divsufsort64 gtest Threads::Threads)
 target_link_libraries(dk2tree_test LINK_PUBLIC gtest Threads::Threads stdc++)
 
 add_executable(dk2tree main.cpp)
-#target_link_libraries(dk2tree LINK_PUBLIC sdsl divsufsort divsufsort64 gtest Threads::Threads)
 target_link_libraries(dk2tree LINK_PUBLIC gtest Threads::Threads stdc++)
-
-add_executable(dk2treekb mainkb.cpp)
-#target_link_libraries(dk2tree LINK_PUBLIC sdsl divsufsort divsufsort64 gtest Threads::Threads)
-target_link_libraries(dk2treekb LINK_PUBLIC gtest Threads::Threads stdc++)
